@@ -1,0 +1,23 @@
+# --- Python / Backend ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+
+# db
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Editor / IDE ---
+.vscode/
+.idea/
+*.iml
+*.swp
+
+# agents
+AGENTS.md
+CLAUDE.md
