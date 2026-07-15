@@ -4,7 +4,7 @@ from app.core.database import Base
 
 class TimetableSlot(Base):
     """
-    Rappresenta uno slot occupato nell'orario scolastico generato.
+    Represents an occupied slot in the generated school timetable.
     """
     __tablename__ = "timetable_slots"
 
@@ -21,8 +21,8 @@ class TimetableSlot(Base):
     subject = relationship("Subject", back_populates="timetable_slots")
 
     __table_args__ = (
-        # Una classe non può fare due materie contemporaneamente
+        # A class cannot take two subjects at the same time
         UniqueConstraint('day', 'hour', 'class_id', name='_class_schedule_uc'),
-        # Un insegnante non può insegnare a due classi contemporaneamente
+        # A teacher cannot teach two classes at the same time
         UniqueConstraint('day', 'hour', 'teacher_id', name='_teacher_schedule_uc'),
     )

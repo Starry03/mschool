@@ -16,56 +16,56 @@ from app.models.timetable_slot import TimetableSlot
 from app.services.solver import generate_timetable
 
 def run_tests():
-    print("=== INIZIO TEST DEL SOLVER ===")
+    print("=== START OF SOLVER TESTS ===")
     
-    # 1. Crea un database SQLite in memoria per i test
-    # (così non abbiamo bisogno di MySQL attivo per verificare la logica del solver)
+    # 1. Create an in-memory SQLite database for testing
+    # (so we do not need MySQL active to verify the solver logic)
     engine = create_engine("sqlite:///:memory:")
     SessionTesting = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     
-    # Crea le tabelle
+    # Create tables
     Base.metadata.create_all(bind=engine)
     db = SessionTesting()
     
     try:
-        # 2. Inserisci configurazione globale della scuola
+        # 2. Insert global school settings
         settings = SchoolSettings(id=1, days_per_week=5, hours_per_day=6)
         db.add(settings)
         
-        # 3. Inserisci Docenti
+        # 3. Insert Teachers
         t_rossi = Teacher(id=1, first_name="Mario", last_name="Rossi", email="mario.rossi@school.it")
         t_verdi = Teacher(id=2, first_name="Luigi", last_name="Verdi", email="luigi.verdi@school.it")
         t_bianchi = Teacher(id=3, first_name="Anna", last_name="Bianchi", email="anna.bianchi@school.it")
         db.add_all([t_rossi, t_verdi, t_bianchi])
         db.commit()
         
-        # Inizializza impostazioni docenti
+        # Initialize teacher settings
         ts_rossi = TeacherSettings(teacher_id=1, max_consecutive_hours=3, max_hours_per_day=4)
         ts_verdi = TeacherSettings(teacher_id=2, max_consecutive_hours=3, max_hours_per_day=5)
         ts_bianchi = TeacherSettings(teacher_id=3, max_consecutive_hours=4, max_hours_per_day=5)
         db.add_all([ts_rossi, ts_verdi, ts_bianchi])
         
-        # Aggiungi vincoli docenti (indisponibilità)
-        # Rossi non può il lunedì (giorno 0) alle prime 2 ore (ore 0, 1)
+        # Add teacher constraints (unavailability)
+        # Rossi is unavailable on Monday (day 0) at the first 2 hours (hours 0, 1)
         c_rossi1 = TeacherConstraint(teacher_id=1, day=0, hour=0)
         c_rossi2 = TeacherConstraint(teacher_id=1, day=0, hour=1)
-        # Verdi non può il mercoledì (giorno 2) all'ultima ora (ora 5)
+        # Verdi is unavailable on Wednesday (day 2) at the last hour (hour 5)
         c_verdi = TeacherConstraint(teacher_id=2, day=2, hour=5)
         db.add_all([c_rossi1, c_rossi2, c_verdi])
         
-        # 4. Inserisci Classi
+        # 4. Insert Classes
         c_1a = SchoolClass(id=1, name="1A")
         c_2b = SchoolClass(id=2, name="2B")
         db.add_all([c_1a, c_2b])
         
-        # 5. Inserisci Materie
-        s_math = Subject(id=1, name="Matematica")
-        s_ita = Subject(id=2, name="Italiano")
-        s_sci = Subject(id=3, name="Scienze")
+        # 5. Insert Subjects
+        s_math = Subject(id=1, name="Mathematics")
+        s_ita = Subject(id=2, name="Italian")
+        s_sci = Subject(id=3, name="Science")
         db.add_all([s_math, s_ita, s_sci])
         db.commit()
         
-        # 6. Inserisci Assegnazioni (weekly_hours totali per classe: 1A=14h, 2B=14h)
+        # 6. Insert Assignments (total weekly hours per class: 1A=14h, 2B=14h)
         a_math_1a = Assignment(teacher_id=1, class_id=1, subject_id=1, weekly_hours=5)
         a_math_2b = Assignment(teacher_id=1, class_id=2, subject_id=1, weekly_hours=5)
         a_ita_1a = Assignment(teacher_id=2, class_id=1, subject_id=2, weekly_hours=5)
@@ -75,84 +75,84 @@ def run_tests():
         db.add_all([a_math_1a, a_math_2b, a_ita_1a, a_ita_2b, a_sci_1a, a_sci_2b])
         db.commit()
         
-        print("\n[TEST 1] Risoluzione di un problema fattibile standard...")
+        print("\n[TEST 1] Solving a standard feasible problem...")
         success, msg, slots, err = generate_timetable(db, max_time_seconds=5.0)
         
-        print(f"Successo: {success}")
-        print(f"Messaggio: {msg}")
-        print(f"Slot generati: {len(slots)}")
+        print(f"Success: {success}")
+        print(f"Message: {msg}")
+        print(f"Generated slots: {len(slots)}")
         if err:
-            print(f"Dettaglio Errore: {err}")
+            print(f"Error Detail: {err}")
             
-        assert success is True, "Il test del solver fattibile ha fallito!"
-        assert len(slots) == 28, f"Avrebbero dovuto esserci 28 slot generati, trovati {len(slots)}"
+        assert success is True, "The feasible solver test failed!"
+        assert len(slots) == 28, f"Should have been 28 generated slots, found {len(slots)}"
         
-        # Stampiamo l'orario generato per verifica visiva
-        giorni_nomi = ["Lun", "Mar", "Mer", "Gio", "Ven"]
+        # Print the generated timetable for visual verification
+        giorni_nomi = ["Mon", "Tue", "Wed", "Thu", "Fri"]
         for cid in [1, 2]:
             cname = "1A" if cid == 1 else "2B"
-            print(f"\n--- Orario Classe {cname} ---")
-            print(f"{'Ora':<6} | " + " | ".join(f"{g:<12}" for g in giorni_nomi))
+            print(f"\n--- Class Timetable {cname} ---")
+            print(f"{'Hour':<6} | " + " | ".join(f"{g:<12}" for g in giorni_nomi))
             print("-" * 80)
             for h in range(6):
-                riga = f"Ora {h+1}  "
+                riga = f"Hour {h+1}  "
                 for g in range(5):
-                    # Trova slot
+                    # Find slot
                     slot = next((s for s in slots if s["class_id"] == cid and s["day"] == g and s["hour"] == h), None)
                     if slot:
                         t = db.query(Teacher).get(slot["teacher_id"])
                         sub = db.query(Subject).get(slot["subject_id"])
                         riga += f"| {t.last_name + ' (' + sub.name[:3] + ')':<12} "
                     else:
-                        riga += f"| {'Libero':<12} "
+                        riga += f"| {'Free':<12} "
                 print(riga)
                 
         # ---------------------------------------------------------------------
-        # TEST 2: Fallimento per sovraccarico della classe (pre-check)
+        # TEST 2: Failure due to class overload (pre-check)
         # ---------------------------------------------------------------------
-        print("\n[TEST 2] Verifica pre-check: Sovraccarico ore classe...")
-        # Cambia ore Matematica in 1A a 35 ore (il totale della settimana è 30 ore max!)
+        print("\n[TEST 2] Verification pre-check: Class hour overload...")
+        # Change Mathematics hours in 1A to 35 hours (the weekly total is 30 hours max!)
         a_math_1a.weekly_hours = 35
         db.commit()
         
         success, msg, slots, err = generate_timetable(db, max_time_seconds=2.0)
-        print(f"Successo: {success} (Atteso: False)")
-        print(f"Messaggio: {msg}")
-        print(f"Dettaglio Errore: {err}")
+        print(f"Success: {success} (Expected: False)")
+        print(f"Message: {msg}")
+        print(f"Error Detail: {err}")
         
-        assert success is False, "Il solver avrebbe dovuto fallire per sovraccarico classe!"
-        assert "troppe ore assegnate" in msg.lower(), "Messaggio di errore non corrispondente!"
+        assert success is False, "The solver should have failed due to class overload!"
+        assert "too many assigned hours" in msg.lower(), "Error message mismatch!"
         
-        # Ripristina
+        # Restore
         a_math_1a.weekly_hours = 5
         db.commit()
 
         # ---------------------------------------------------------------------
-        # TEST 3: Fallimento per troppi vincoli (diagnostica solver)
+        # TEST 3: Failure due to too many constraints (solver diagnosis)
         # ---------------------------------------------------------------------
-        print("\n[TEST 3] Verifica diagnostica: Conflitto indisponibilità docenti...")
-        # Elimina i vincoli orari esistenti per evitare conflitti UNIQUE
+        print("\n[TEST 3] Verification diagnosis: Teacher unavailability conflict...")
+        # Delete existing constraints to avoid UNIQUE conflicts
         db.query(TeacherConstraint).delete()
         db.commit()
-        # Rendiamo Rossi (che insegna 10 ore in totale) indisponibile per tutti i giorni tranne 1 ora
-        # Total slots = 30. Mettiamo 29 indisponibilità.
+        # We make Rossi (who teaches 10 hours in total) unavailable for all days except 1 hour
+        # Total slots = 30. We add 29 unavailabilities.
         for g in range(5):
             for h in range(6):
                 if g == 0 and h == 2:
-                    continue # Lascia solo 1 slot libero
+                    continue # Leave only 1 slot free
                 db.add(TeacherConstraint(teacher_id=1, day=g, hour=h))
         db.commit()
         
         success, msg, slots, err = generate_timetable(db, max_time_seconds=2.0)
-        print(f"Successo: {success} (Atteso: False)")
-        print(f"Messaggio: {msg}")
-        print(f"Dettaglio Errore: {err}")
+        print(f"Success: {success} (Expected: False)")
+        print(f"Message: {msg}")
+        print(f"Error Detail: {err}")
         
-        assert success is False, "Il solver avrebbe dovuto fallire per indisponibilità docente!"
-        # Dovrebbe essere preso dal pre-check (10 ore assegnate, solo 1 disponibile)
-        assert "disponibilità" in msg.lower(), "Il pre-check avrebbe dovuto rilevare la carenza di ore disponibili!"
+        assert success is False, "The solver should have failed due to teacher unavailability!"
+        # Should be caught by pre-check (10 hours assigned, only 1 available)
+        assert "availability" in msg.lower(), "The pre-check should have detected the lack of available hours!"
         
-        print("\n=== TUTTI I TEST DEL SOLVER SONO PASSAATI CON SUCCESSO! ===")
+        print("\n=== ALL SOLVER TESTS PASSED SUCCESSFULLY! ===")
         
     finally:
         db.close()

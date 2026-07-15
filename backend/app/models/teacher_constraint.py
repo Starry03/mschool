@@ -4,9 +4,9 @@ from app.core.database import Base
 
 class TeacherConstraint(Base):
     """
-    Rappresenta le fasce orarie in cui il docente NON può insegnare.
-    Day: 0 = lunedì, 1 = martedì, ecc.
-    Hour: 0 = prima ora, 1 = seconda ora, ecc.
+    Represents the time slots in which the teacher CANNOT teach.
+    Day: 0 = Monday, 1 = Tuesday, etc.
+    Hour: 0 = first hour, 1 = second hour, etc.
     """
     __tablename__ = "teacher_constraints"
 

@@ -23,7 +23,7 @@ def clear_db(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Errore durante la pulizia del database: {e}"
+            detail=f"Error clearing database: {e}"
         )
 
 @router.delete("/clear-table/{table_name}", status_code=status.HTTP_204_NO_CONTENT)
@@ -32,5 +32,5 @@ def clear_table(table_name: str, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Tabella '{table_name}' non valida. Usa: teachers, classes, subjects, assignments, timetable"
+            detail=f"Invalid table '{table_name}'. Use: teachers, classes, subjects, assignments, timetable"
         )

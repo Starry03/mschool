@@ -1,0 +1,92 @@
+import 'package:flutter/material.dart';
+
+class DesignSystem {
+  // Brand Colors
+  static const Color primary = Color(0xFF6366F1); // Indigo
+  static const Color secondary = Color(0xFF8B5CF6); // Violet / Purple
+  static const Color success = Color(0xFF10B981); // Emerald Green
+  static const Color error = Colors.redAccent;
+
+  // Background Colors
+  static const Color bgDark = Color(0xFF0F172A);
+  static const Color bgLight = Color(0xFFF8FAFC);
+
+  // Card Backgrounds
+  static const Color cardDark = Color(0xFF1E2235);
+  static const Color cardLight = Colors.white;
+
+  // Field Backgrounds
+  static const Color fieldDark = Color(0xFF2E334D);
+  static const Color fieldLight = Color(0xFFF1F5F9);
+
+  // Spacing Metrics
+  static const double spacingXs = 4.0;
+  static const double spacingSm = 8.0;
+  static const double spacingMd = 12.0;
+  static const double spacingLg = 16.0;
+  static const double spacingXl = 24.0;
+  static const double spacingXxl = 32.0;
+
+  // Radii Constants
+  static const double radiusSm = 6.0;
+  static const double radiusMd = 12.0;
+  static const double radiusLg = 16.0;
+  static const double radiusXl = 20.0;
+
+  // Reusable Shadows
+  static List<BoxShadow>? getShadow(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (isDark) {
+      return [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.2),
+          blurRadius: 20,
+          offset: const Offset(0, 10),
+        )
+      ];
+    } else {
+      return [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.04),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        )
+      ];
+    }
+  }
+
+  // Reusable Card Border
+  static Border getBorder(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Border.all(
+      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+      width: 1.0,
+    );
+  }
+
+  // Reusable Theme Helpers
+  static Color getCardColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? cardDark.withValues(alpha: 0.8) : cardLight;
+  }
+
+  static Color getFieldColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? fieldDark.withValues(alpha: 0.4) : fieldLight;
+  }
+
+  static Color getTextColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.white : const Color(0xFF0F172A);
+  }
+
+  static Color getSubtitleColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.white70 : const Color(0xFF475569);
+  }
+
+  static Color getMutedColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.white38 : Colors.black38;
+  }
+}

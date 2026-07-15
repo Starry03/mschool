@@ -4,6 +4,7 @@ import 'services/api_service.dart';
 import 'views/dashboard_view.dart';
 import 'views/teachers_view.dart';
 import 'views/data_management_view.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'views/assignments_view.dart';
 
 void main() {
@@ -24,7 +25,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'School Timetable Generator',
+      title: 'MSchool',
       debugShowCheckedModeBanner: false,
       themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
@@ -36,7 +37,6 @@ class _MyAppState extends State<MyApp> {
           primary: Color(0xFF6366F1),
           secondary: Color(0xFF8B5CF6),
           surface: Colors.white,
-          background: Color(0xFFF8FAFC),
         ),
       ),
       darkTheme: ThemeData(
@@ -48,7 +48,6 @@ class _MyAppState extends State<MyApp> {
           primary: Color(0xFF6366F1),
           secondary: Color(0xFF8B5CF6),
           surface: Color(0xFF1E2235),
-          background: Color(0xFF0F172A),
         ),
       ),
       home: MainShell(
@@ -66,7 +65,11 @@ class _MyAppState extends State<MyApp> {
 class MainShell extends StatefulWidget {
   final bool isDarkMode;
   final ValueChanged<bool> onThemeChanged;
-  const MainShell({super.key, required this.isDarkMode, required this.onThemeChanged});
+  const MainShell({
+    super.key,
+    required this.isDarkMode,
+    required this.onThemeChanged,
+  });
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -76,7 +79,8 @@ class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
   SchoolSettings? _schoolSettings;
   bool _isLoadingSettings = true;
-  
+  String _appVersion = 'v1.0.0';
+
   // Settings controllers
   final _daysController = TextEditingController();
   final _hoursController = TextEditingController();
@@ -86,6 +90,20 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     _loadSettings();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      setState(() {
+        _appVersion = 'v${packageInfo.version}';
+      });
+    } catch (_) {
+      setState(() {
+        _appVersion = 'v1.0.0';
+      });
+    }
   }
 
   Future<void> _loadSettings() async {
@@ -98,7 +116,7 @@ class _MainShellState extends State<MainShell> {
         _hoursController.text = settings.hoursPerDay.toString();
       });
     } catch (e) {
-      _showError('Impossibile caricare le impostazioni scolastiche: $e');
+      _showError('Unable to load school settings: $e');
     } finally {
       setState(() => _isLoadingSettings = false);
     }
@@ -107,9 +125,9 @@ class _MainShellState extends State<MainShell> {
   Future<void> _saveSettings() async {
     final days = int.tryParse(_daysController.text) ?? 5;
     final hours = int.tryParse(_hoursController.text) ?? 6;
-    
+
     if (days < 1 || days > 6 || hours < 1 || hours > 8) {
-      _showError('Impostazioni non valide: max 6 giorni e max 8 ore.');
+      _showError('Invalid settings: max 6 days and max 8 hours.');
       return;
     }
 
@@ -117,14 +135,14 @@ class _MainShellState extends State<MainShell> {
     try {
       // Save backend url first
       ApiService.baseUrl = _apiUrlController.text.trim();
-      
+
       final settings = await ApiService.updateSettings(days, hours);
       setState(() {
         _schoolSettings = settings;
       });
-      _showSuccess('Impostazioni salvate con successo!');
+      _showSuccess('Settings saved successfully!');
     } catch (e) {
-      _showError('Impossibile salvare le impostazioni: $e');
+      _showError('Unable to save settings: $e');
     } finally {
       setState(() => _isLoadingSettings = false);
     }
@@ -142,14 +160,14 @@ class _MainShellState extends State<MainShell> {
       // In case they edited the URL but didn't save yet, use the current controller value
       final originalUrl = ApiService.baseUrl;
       ApiService.baseUrl = _apiUrlController.text.trim();
-      
+
       final result = await ApiService.testConnection();
-      
+
       // Restore URL if test failed and they want to keep previous
       if (!result['success']) {
         ApiService.baseUrl = originalUrl;
       }
-      
+
       setState(() {
         _connectionResult = result;
       });
@@ -173,18 +191,32 @@ class _MainShellState extends State<MainShell> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E2235),
-        title: Text('ATTENZIONE: Svuota intero Database', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-        content: Text('Questa azione cancellerà TUTTI i dati presenti: docenti, vincoli, classi, materie, cattedre e orari.\n\nL\'azione è irreversibile. Vuoi procedere?', 
-          style: TextStyle(color: Colors.white70)),
+        title: const Text(
+          'WARNING: Clear Entire Database',
+          style: TextStyle(
+            color: Colors.redAccent,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: const Text(
+          'This action will clear ALL existing data: teachers, constraints, classes, subjects, chairs, and timetables.\n\nThis action is irreversible. Do you want to proceed?',
+          style: TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Annulla', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () => Navigator.pop(context, true),
-            child: Text('SVUOTA TUTTO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'CLEAR ALL',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -194,33 +226,53 @@ class _MainShellState extends State<MainShell> {
       setState(() => _isLoadingSettings = true);
       try {
         await ApiService.clearDatabase();
-        _showSuccess('Intero database svuotato con successo!');
+        _showSuccess('Entire database cleared successfully!');
         _loadSettings();
       } catch (e) {
-        _showError('Errore durante la pulizia del database: $e');
+        _showError('Error while clearing database: $e');
       } finally {
         setState(() => _isLoadingSettings = false);
       }
     }
   }
 
-  Future<void> _clearTable(String tableName, String displayName, String warningDetails) async {
+  Future<void> _clearTable(
+    String tableName,
+    String displayName,
+    String warningDetails,
+  ) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E2235),
-        title: Text('ATTENZIONE: Svuota $displayName', style: TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
-        content: Text('Stai per cancellare tutti gli elementi in $displayName.\n\n$warningDetails\n\nVuoi procedere?', 
-          style: TextStyle(color: Colors.white70)),
+        title: Text(
+          'WARNING: Clear $displayName',
+          style: const TextStyle(
+            color: Colors.orangeAccent,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'You are about to delete all elements in $displayName.\n\n$warningDetails\n\nDo you want to proceed?',
+          style: const TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Annulla', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orangeAccent,
+            ),
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Procedi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Proceed',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -230,10 +282,10 @@ class _MainShellState extends State<MainShell> {
       setState(() => _isLoadingSettings = true);
       try {
         await ApiService.clearTable(tableName);
-        _showSuccess('Tabella $displayName svuotata con successo!');
+        _showSuccess('Table $displayName cleared successfully!');
         _loadSettings();
       } catch (e) {
-        _showError('Errore durante la pulizia di $displayName: $e');
+        _showError('Error while clearing $displayName: $e');
       } finally {
         setState(() => _isLoadingSettings = false);
       }
@@ -248,7 +300,10 @@ class _MainShellState extends State<MainShell> {
 
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: const Color(0xFF10B981)),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF10B981),
+      ),
     );
   }
 
@@ -262,28 +317,53 @@ class _MainShellState extends State<MainShell> {
       );
     }
 
-    final currentSettings = _schoolSettings ?? SchoolSettings(id: 1, daysPerWeek: 5, hoursPerDay: 6);
+    final currentSettings =
+        _schoolSettings ??
+        SchoolSettings(id: 1, daysPerWeek: 5, hoursPerDay: 6);
 
     // List of navigation items
     final List<Map<String, dynamic>> navItems = [
-      {'title': 'Orario & Dashboard', 'icon': Icons.grid_on_outlined},
-      {'title': 'Docenti & Vincoli', 'icon': Icons.people_outline},
-      {'title': 'Classi & Materie', 'icon': Icons.room_preferences_outlined},
-      {'title': 'Assegnazione Cattedre', 'icon': Icons.assignment_ind_outlined},
-      {'title': 'Impostazioni', 'icon': Icons.settings_outlined},
+      {'title': 'Timetable & Dashboard', 'icon': Icons.grid_on_outlined},
+      {'title': 'Teachers & Constraints', 'icon': Icons.people_outline},
+      {'title': 'Classes & Subjects', 'icon': Icons.room_preferences_outlined},
+      {'title': 'Chair Assignments', 'icon': Icons.assignment_ind_outlined},
+      {'title': 'Settings', 'icon': Icons.settings_outlined},
     ];
 
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isSmallScreen = screenWidth < 900;
+
     return Scaffold(
+      appBar: isSmallScreen
+          ? AppBar(
+              title: Text(
+                navItems[_selectedIndex]['title'] as String,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              iconTheme: IconThemeData(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : const Color(0xFF0F172A),
+              ),
+            )
+          : null,
+      drawer: isSmallScreen
+          ? Drawer(
+              child: _buildSidebar(navItems, isDrawer: true),
+            )
+          : null,
       body: Stack(
         children: [
           // Background Gradient decoration
           _buildBackgroundGradient(),
-          
+
           Row(
             children: [
               // Sidebar Navigation
-              _buildSidebar(navItems),
-              
+              if (!isSmallScreen) _buildSidebar(navItems),
+
               // Main content container with fade transition
               Expanded(
                 child: Container(
@@ -301,9 +381,15 @@ class _MainShellState extends State<MainShell> {
   Widget _buildSelectedView(SchoolSettings currentSettings) {
     switch (_selectedIndex) {
       case 0:
-        return DashboardView(key: const ValueKey('dashboard'), schoolSettings: currentSettings);
+        return DashboardView(
+          key: const ValueKey('dashboard'),
+          schoolSettings: currentSettings,
+        );
       case 1:
-        return TeachersView(key: const ValueKey('teachers'), schoolSettings: currentSettings);
+        return TeachersView(
+          key: const ValueKey('teachers'),
+          schoolSettings: currentSettings,
+        );
       case 2:
         return const DataManagementView(key: ValueKey('data_mgmt'));
       case 3:
@@ -338,13 +424,19 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  Widget _buildSidebar(List<Map<String, dynamic>> items) {
+  Widget _buildSidebar(List<Map<String, dynamic>> items, {bool isDrawer = false}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 260,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0B0F19).withOpacity(0.5) : Colors.white,
-        border: Border(right: BorderSide(color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.06))),
+        border: Border(
+          right: BorderSide(
+            color: isDark
+                ? Colors.white.withOpacity(0.04)
+                : Colors.black.withOpacity(0.06),
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -363,10 +455,14 @@ class _MainShellState extends State<MainShell> {
                       BoxShadow(
                         color: const Color(0xFF6366F1).withOpacity(0.4),
                         blurRadius: 12,
-                      )
+                      ),
                     ],
                   ),
-                  child: const Icon(Icons.school, color: Colors.white, size: 28),
+                  child: const Icon(
+                    Icons.school,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -374,15 +470,17 @@ class _MainShellState extends State<MainShell> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'SchoolTime',
+                        'MSchool',
                         style: TextStyle(
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0F172A),
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        'OR-Tools Generator',
+                        _appVersion,
                         style: TextStyle(
                           color: isDark ? Colors.white38 : Colors.black38,
                           fontSize: 11,
@@ -394,10 +492,15 @@ class _MainShellState extends State<MainShell> {
               ],
             ),
           ),
-          
-          Divider(color: isDark ? Colors.white10 : Colors.black12, height: 1, indent: 20, endIndent: 20),
+
+          Divider(
+            color: isDark ? Colors.white10 : Colors.black12,
+            height: 1,
+            indent: 20,
+            endIndent: 20,
+          ),
           const SizedBox(height: 24),
-          
+
           // Menu Items
           Expanded(
             child: ListView.builder(
@@ -406,7 +509,10 @@ class _MainShellState extends State<MainShell> {
                 final item = items[index];
                 final isSelected = _selectedIndex == index;
                 return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
@@ -414,23 +520,37 @@ class _MainShellState extends State<MainShell> {
                         setState(() {
                           _selectedIndex = index;
                         });
+                        if (isDrawer) {
+                          Navigator.pop(context);
+                        }
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF6366F1).withOpacity(isDark ? 0.12 : 0.08) : Colors.transparent,
+                          color: isSelected
+                              ? const Color(
+                                  0xFF6366F1,
+                                ).withOpacity(isDark ? 0.12 : 0.08)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected ? const Color(0xFF6366F1).withOpacity(isDark ? 0.2 : 0.15) : Colors.transparent,
+                            color: isSelected
+                                ? const Color(
+                                    0xFF6366F1,
+                                  ).withOpacity(isDark ? 0.2 : 0.15)
+                                : Colors.transparent,
                           ),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               item['icon'] as IconData,
-                              color: isSelected 
-                                  ? const Color(0xFF6366F1) 
+                              color: isSelected
+                                  ? const Color(0xFF6366F1)
                                   : (isDark ? Colors.white60 : Colors.black54),
                               size: 22,
                             ),
@@ -439,10 +559,16 @@ class _MainShellState extends State<MainShell> {
                               child: Text(
                                 item['title'] as String,
                                 style: TextStyle(
-                                  color: isSelected 
-                                      ? (isDark ? Colors.white : const Color(0xFF6366F1)) 
-                                      : (isDark ? Colors.white70 : Colors.black87),
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected
+                                      ? (isDark
+                                            ? Colors.white
+                                            : const Color(0xFF6366F1))
+                                      : (isDark
+                                            ? Colors.white70
+                                            : Colors.black87),
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                   fontSize: 14,
                                 ),
                               ),
@@ -467,7 +593,12 @@ class _MainShellState extends State<MainShell> {
           ),
 
           // Theme Switch
-          Divider(color: isDark ? Colors.white10 : Colors.black12, height: 1, indent: 20, endIndent: 20),
+          Divider(
+            color: isDark ? Colors.white10 : Colors.black12,
+            height: 1,
+            indent: 20,
+            endIndent: 20,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
@@ -476,13 +607,15 @@ class _MainShellState extends State<MainShell> {
                 Row(
                   children: [
                     Icon(
-                      widget.isDarkMode ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                      widget.isDarkMode
+                          ? Icons.dark_mode_outlined
+                          : Icons.light_mode_outlined,
                       color: isDark ? Colors.white70 : Colors.black87,
                       size: 20,
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      widget.isDarkMode ? 'Tema Scuro' : 'Tema Chiaro',
+                      widget.isDarkMode ? 'Dark Theme' : 'Light Theme',
                       style: TextStyle(
                         color: isDark ? Colors.white70 : Colors.black87,
                         fontSize: 14,
@@ -493,7 +626,7 @@ class _MainShellState extends State<MainShell> {
                 ),
                 Switch(
                   value: widget.isDarkMode,
-                  activeColor: const Color(0xFF6366F1),
+                  activeThumbColor: const Color(0xFF6366F1),
                   onChanged: widget.onThemeChanged,
                 ),
               ],
@@ -509,12 +642,18 @@ class _MainShellState extends State<MainShell> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Theme-aware styles
-    final cardColor = isDark ? const Color(0xFF1E2235).withOpacity(0.8) : Colors.white;
-    final borderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06);
+    final cardColor = isDark
+        ? const Color(0xFF1E2235).withOpacity(0.8)
+        : Colors.white;
+    final borderColor = isDark
+        ? Colors.white.withOpacity(0.08)
+        : Colors.black.withOpacity(0.06);
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
     final subtitleColor = isDark ? Colors.white70 : const Color(0xFF475569);
     final mutedColor = isDark ? Colors.white38 : Colors.black38;
-    final fieldBgColor = isDark ? const Color(0xFF2E334D).withOpacity(0.4) : const Color(0xFFF1F5F9);
+    final fieldBgColor = isDark
+        ? const Color(0xFF2E334D).withOpacity(0.4)
+        : const Color(0xFFF1F5F9);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -537,38 +676,52 @@ class _MainShellState extends State<MainShell> {
                         color: cardColor,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: borderColor),
-                        boxShadow: !isDark ? [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          )
-                        ] : null,
+                        boxShadow: !isDark
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : null,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.settings, color: Color(0xFF6366F1), size: 26),
+                              const Icon(
+                                Icons.settings,
+                                color: Color(0xFF6366F1),
+                                size: 26,
+                              ),
                               const SizedBox(width: 12),
                               Text(
-                                'Impostazioni Globali',
-                                style: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.bold),
+                                'Global Settings',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Configura la struttura scolastica di base e l\'endpoint del server.',
+                            'Configure the basic school structure and server endpoint.',
                             style: TextStyle(color: mutedColor, fontSize: 12),
                           ),
                           const SizedBox(height: 28),
-                          
+
                           // Days per week
                           Text(
-                            'Giorni lavorativi settimanali (max 6)',
-                            style: TextStyle(color: subtitleColor, fontSize: 13, fontWeight: FontWeight.bold),
+                            'Weekly working days (max 6)',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           TextField(
@@ -576,7 +729,7 @@ class _MainShellState extends State<MainShell> {
                             keyboardType: TextInputType.number,
                             style: TextStyle(color: textColor),
                             decoration: InputDecoration(
-                              hintText: 'Es: 5',
+                              hintText: 'e.g., 5',
                               hintStyle: TextStyle(color: mutedColor),
                               filled: true,
                               fillColor: fieldBgColor,
@@ -586,17 +739,27 @@ class _MainShellState extends State<MainShell> {
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF6366F1),
+                                  width: 1.5,
+                                ),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
-                          
+
                           // Hours per day
                           Text(
-                            'Ore di lezione giornaliere (max 8)',
-                            style: TextStyle(color: subtitleColor, fontSize: 13, fontWeight: FontWeight.bold),
+                            'Daily school hours (max 8)',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           TextField(
@@ -604,34 +767,7 @@ class _MainShellState extends State<MainShell> {
                             keyboardType: TextInputType.number,
                             style: TextStyle(color: textColor),
                             decoration: InputDecoration(
-                              hintText: 'Es: 6',
-                              hintStyle: TextStyle(color: mutedColor),
-                              filled: true,
-                              fillColor: fieldBgColor,
-                              enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: borderColor),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // API Endpoint
-                          Text(
-                            'URL API Backend (FastAPI)',
-                            style: TextStyle(color: subtitleColor, fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _apiUrlController,
-                            style: TextStyle(color: textColor),
-                            decoration: InputDecoration(
-                              hintText: 'Es: http://localhost:8000/api/v1',
+                              hintText: 'e.g., 6',
                               hintStyle: TextStyle(color: mutedColor),
                               filled: true,
                               fillColor: fieldBgColor,
@@ -641,32 +777,77 @@ class _MainShellState extends State<MainShell> {
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF6366F1),
+                                  width: 1.5,
+                                ),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // API Endpoint
+                          Text(
+                            'Backend API URL',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _apiUrlController,
+                            style: TextStyle(color: textColor),
+                            decoration: InputDecoration(
+                              hintText: 'e.g., http://localhost:8000/api/v1',
+                              hintStyle: TextStyle(color: mutedColor),
+                              filled: true,
+                              fillColor: fieldBgColor,
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: borderColor),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF6366F1),
+                                  width: 1.5,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 24),
-                          
+
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF6366F1),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                             onPressed: _saveSettings,
-                            child: Text(
-                              'Salva Impostazioni',
+                            child: const Text(
+                              'Save Settings',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Diagnostics Card
                     Container(
                       padding: const EdgeInsets.all(28),
@@ -674,44 +855,78 @@ class _MainShellState extends State<MainShell> {
                         color: cardColor,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: borderColor),
-                        boxShadow: !isDark ? [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          )
-                        ] : null,
+                        boxShadow: !isDark
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : null,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.analytics_outlined, color: Colors.teal, size: 26),
+                              const Icon(
+                                Icons.analytics_outlined,
+                                color: Colors.teal,
+                                size: 26,
+                              ),
                               const SizedBox(width: 12),
                               Text(
-                                'Diagnostica & Connessione',
-                                style: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.bold),
+                                'Diagnostics & Connection',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          
+
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.teal.withOpacity(isDark ? 0.2 : 0.1),
-                              foregroundColor: isDark ? Colors.tealAccent : Colors.teal.shade700,
-                              side: BorderSide(color: isDark ? Colors.teal : Colors.teal.shade300),
+                              backgroundColor: Colors.teal.withOpacity(
+                                isDark ? 0.2 : 0.1,
+                              ),
+                              foregroundColor: isDark
+                                  ? Colors.tealAccent
+                                  : Colors.teal.shade700,
+                              side: BorderSide(
+                                color: isDark
+                                    ? Colors.teal
+                                    : Colors.teal.shade300,
+                              ),
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                            onPressed: _isTestingConnection ? null : _testConnection,
+                            onPressed: _isTestingConnection
+                                ? null
+                                : _testConnection,
                             icon: _isTestingConnection
-                                ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: isDark ? Colors.tealAccent : Colors.teal.shade700, strokeWidth: 2))
+                                ? SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      color: isDark
+                                          ? Colors.tealAccent
+                                          : Colors.teal.shade700,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
                                 : const Icon(Icons.wifi_tethering),
-                            label: Text('Verifica Connessione Backend', style: TextStyle(fontWeight: FontWeight.bold)),
+                            label: const Text(
+                              'Verify Backend Connection',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
-                          
+
                           if (pingResult != null) ...[
                             const SizedBox(height: 20),
                             _buildPingResultWidget(pingResult),
@@ -723,9 +938,9 @@ class _MainShellState extends State<MainShell> {
                 ),
               ),
             ),
-            
+
             const SizedBox(width: 24),
-            
+
             // Right Column: Database Maintenance Tools & Cascade Warnings
             Expanded(
               flex: 5,
@@ -736,58 +951,79 @@ class _MainShellState extends State<MainShell> {
                     color: cardColor,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: borderColor),
-                    boxShadow: !isDark ? [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      )
-                    ] : null,
+                    boxShadow: !isDark
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.storage_outlined, color: Colors.orangeAccent, size: 26),
+                          const Icon(
+                            Icons.storage_outlined,
+                            color: Colors.orangeAccent,
+                            size: 26,
+                          ),
                           const SizedBox(width: 12),
                           Text(
-                            'Manutenzione Database',
-                            style: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.bold),
+                            'Database Maintenance',
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Strumenti di pulizia e reset dei dati con avviso di eliminazione a cascata.',
+                        'Clean-up and reset tools with cascade delete warnings.',
                         style: TextStyle(color: mutedColor, fontSize: 12),
                       ),
                       const SizedBox(height: 28),
-                      
+
                       // ALERT WARNING BAR
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.redAccent.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                          border: Border.all(
+                            color: Colors.redAccent.withOpacity(0.3),
+                          ),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.report_problem, color: Colors.redAccent, size: 22),
+                            const Icon(
+                              Icons.report_problem,
+                              color: Colors.redAccent,
+                              size: 22,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'ATTENZIONE: Le operazioni di svuotamento cancellano definitivamente i record. A causa dei vincoli di integrità referenziale, l\'eliminazione di alcune tabelle comporterà la rimozione a cascata dei dati correlati.',
-                                style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF475569), fontSize: 12),
+                                'WARNING: Clear operations permanently delete records. Due to referential integrity constraints, deleting some tables will result in the cascade removal of related data.',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white70
+                                      : const Color(0xFF475569),
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Full Clean Database Button
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
@@ -795,61 +1031,79 @@ class _MainShellState extends State<MainShell> {
                           foregroundColor: Colors.redAccent,
                           side: const BorderSide(color: Colors.redAccent),
                           padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         onPressed: _clearEntireDatabase,
                         icon: const Icon(Icons.delete_forever),
-                        label: Text('SVUOTA INTERO DATABASE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        label: const Text(
+                          'CLEAR ENTIRE DATABASE',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
-                      
+
                       const SizedBox(height: 20),
                       Divider(color: isDark ? Colors.white12 : Colors.black12),
                       const SizedBox(height: 16),
-                      
+
                       Text(
-                        'Svuota Singole Tabelle',
-                        style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.bold),
+                        'Clear Individual Tables',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 12),
-                      
+
                       // Teachers
                       _buildTableCleanRow(
-                        title: 'Docenti',
+                        title: 'Teachers',
                         tableName: 'teachers',
-                        description: 'Elimina docenti, vincoli orari e cattedre correlate.',
-                        warning: 'Questo rimuoverà permanentemente TUTTI i docenti, le loro preferenze, le indisponibilità inserite, le assegnazioni cattedre e l\'orario scolastico generato.',
+                        description:
+                            'Delete teachers, availability settings, and related chairs.',
+                        warning:
+                            'This will permanently remove ALL teachers, their preferences, unavailability schedules, assigned chairs, and the generated school timetable.',
                       ),
-                      
+
                       // Classes
                       _buildTableCleanRow(
-                        title: 'Classi',
+                        title: 'Classes',
                         tableName: 'classes',
-                        description: 'Elimina classi e cattedre correlate.',
-                        warning: 'Questo rimuoverà permanentemente tutte le classi inserite, tutte le assegnazioni cattedre collegate e l\'orario scolastico generato.',
+                        description: 'Delete classes and related chairs.',
+                        warning:
+                            'This will permanently remove all entered classes, all connected chair assignments, and the generated school timetable.',
                       ),
-                      
+
                       // Subjects
                       _buildTableCleanRow(
-                        title: 'Materie',
+                        title: 'Subjects',
                         tableName: 'subjects',
-                        description: 'Elimina materie e cattedre correlate.',
-                        warning: 'Questo rimuoverà permanentemente tutte le materie di insegnamento, le assegnazioni cattedre collegate e l\'orario scolastico generato.',
+                        description: 'Delete subjects and related chairs.',
+                        warning:
+                            'This will permanently remove all teaching subjects, connected chair assignments, and the generated school timetable.',
                       ),
-                      
+
                       // Assignments
                       _buildTableCleanRow(
-                        title: 'Cattedre / Assegnazioni',
+                        title: 'Chairs / Assignments',
                         tableName: 'assignments',
-                        description: 'Rimuove l\'associazione docenti-classi.',
-                        warning: 'Questo rimuoverà permanentemente tutte le cattedre assegnate ed eliminerà l\'orario generato.',
+                        description: 'Remove teacher-class associations.',
+                        warning:
+                            'This will permanently remove all assigned chairs and delete the generated timetable.',
                       ),
-                      
+
                       // Timetable
                       _buildTableCleanRow(
-                        title: 'Orario Scolastico',
+                        title: 'School Timetable',
                         tableName: 'timetable',
-                        description: 'Cancella l\'orario generato.',
-                        warning: 'Questo rimuoverà solo l\'orario generato. I docenti, le classi, le materie e le assegnazioni cattedre rimarranno intatti.',
+                        description: 'Delete the generated timetable.',
+                        warning:
+                            'This will only remove the generated timetable. Teachers, classes, subjects, and chair assignments will remain intact.',
                       ),
                     ],
                   ),
@@ -872,9 +1126,15 @@ class _MainShellState extends State<MainShell> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: success ? Colors.teal.withOpacity(0.08) : Colors.redAccent.withOpacity(0.08),
+        color: success
+            ? Colors.teal.withOpacity(0.08)
+            : Colors.redAccent.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: success ? Colors.teal.withOpacity(0.3) : Colors.redAccent.withOpacity(0.3)),
+        border: Border.all(
+          color: success
+              ? Colors.teal.withOpacity(0.3)
+              : Colors.redAccent.withOpacity(0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -883,14 +1143,18 @@ class _MainShellState extends State<MainShell> {
             children: [
               Icon(
                 success ? Icons.check_circle : Icons.error,
-                color: success ? (isDark ? Colors.tealAccent : Colors.teal.shade700) : Colors.redAccent,
+                color: success
+                    ? (isDark ? Colors.tealAccent : Colors.teal.shade700)
+                    : Colors.redAccent,
                 size: 20,
               ),
               const SizedBox(width: 10),
               Text(
-                success ? 'Backend Disponibile!' : 'Connessione Fallita',
+                success ? 'Backend Available!' : 'Connection Failed',
                 style: TextStyle(
-                  color: success ? (isDark ? Colors.tealAccent : Colors.teal.shade700) : Colors.redAccent,
+                  color: success
+                      ? (isDark ? Colors.tealAccent : Colors.teal.shade700)
+                      : Colors.redAccent,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -898,13 +1162,28 @@ class _MainShellState extends State<MainShell> {
           ),
           const SizedBox(height: 12),
           if (success) ...[
-            Text('• Database: $dbStatus', style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 13)),
+            Text(
+              '• Database: $dbStatus',
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black87,
+                fontSize: 13,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('• Latenza (Ping): ${ping}ms', style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 13)),
+            Text(
+              '• Latency (Ping): ${ping}ms',
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black87,
+                fontSize: 13,
+              ),
+            ),
           ] else ...[
             Text(
-              error ?? 'Errore di connessione sconosciuto.',
-              style: TextStyle(color: isDark ? Colors.white60 : Colors.black54, fontSize: 12),
+              error ?? 'Unknown connection error.',
+              style: TextStyle(
+                color: isDark ? Colors.white60 : Colors.black54,
+                fontSize: 12,
+              ),
             ),
           ],
         ],
@@ -921,8 +1200,12 @@ class _MainShellState extends State<MainShell> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
     final mutedColor = isDark ? Colors.white38 : Colors.black38;
-    final fieldBgColor = isDark ? const Color(0xFF2E334D).withOpacity(0.2) : const Color(0xFFF1F5F9);
-    final borderColor = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04);
+    final fieldBgColor = isDark
+        ? const Color(0xFF2E334D).withOpacity(0.2)
+        : const Color(0xFFF1F5F9);
+    final borderColor = isDark
+        ? Colors.white.withOpacity(0.04)
+        : Colors.black.withOpacity(0.04);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -940,7 +1223,11 @@ class _MainShellState extends State<MainShell> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14),
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -957,10 +1244,15 @@ class _MainShellState extends State<MainShell> {
               foregroundColor: Colors.orangeAccent,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () => _clearTable(tableName, title, warning),
-            child: Text('Svuota', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Clear',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),

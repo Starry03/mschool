@@ -3,8 +3,8 @@ from app.core.database import Base
 
 class SchoolSettings(Base):
     """
-    Rappresenta le impostazioni della scuola (es. giorni settimanali, ore al giorno).
-    Questa tabella conterrà solo una riga.
+    Represents the school settings (e.g., days per week, hours per day).
+    This table will contain only one row.
     """
     __tablename__ = "school_settings"
 
