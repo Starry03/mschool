@@ -1,6 +1,6 @@
 # MSchool
 
-One of the projects of the "just buy a nas and self-host" everything kind
+One of the projects of the "just buy a nas and self-host everything" kind
 
 ## Goal
 
