@@ -338,7 +338,10 @@ class _MainShellState extends State<MainShell> {
           ? AppBar(
               title: Text(
                 navItems[_selectedIndex]['title'] as String,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
               ),
               backgroundColor: Colors.transparent,
               elevation: 0,
@@ -350,9 +353,7 @@ class _MainShellState extends State<MainShell> {
             )
           : null,
       drawer: isSmallScreen
-          ? Drawer(
-              child: _buildSidebar(navItems, isDrawer: true),
-            )
+          ? Drawer(child: _buildSidebar(navItems, isDrawer: true))
           : null,
       body: Stack(
         children: [
@@ -424,7 +425,10 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  Widget _buildSidebar(List<Map<String, dynamic>> items, {bool isDrawer = false}) {
+  Widget _buildSidebar(
+    List<Map<String, dynamic>> items, {
+    bool isDrawer = false,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 260,
@@ -640,6 +644,8 @@ class _MainShellState extends State<MainShell> {
   Widget _buildSettingsView() {
     final pingResult = _connectionResult;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final width = MediaQuery.of(context).size.width;
+    final isDesktop = width > 900;
 
     // Theme-aware styles
     final cardColor = isDark
@@ -655,463 +661,468 @@ class _MainShellState extends State<MainShell> {
         ? const Color(0xFF2E334D).withOpacity(0.4)
         : const Color(0xFFF1F5F9);
 
+    final Widget globalSettingsCard = Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+        boxShadow: !isDark
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.settings, color: Color(0xFF6366F1), size: 26),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Global Settings',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Configure the basic school structure and server endpoint.',
+            style: TextStyle(color: mutedColor, fontSize: 12),
+          ),
+          const SizedBox(height: 28),
+
+          // Days per week
+          Text(
+            'Weekly working days (max 6)',
+            style: TextStyle(
+              color: subtitleColor,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _daysController,
+            keyboardType: TextInputType.number,
+            style: TextStyle(color: textColor),
+            decoration: InputDecoration(
+              hintText: 'e.g., 5',
+              hintStyle: TextStyle(color: mutedColor),
+              filled: true,
+              fillColor: fieldBgColor,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: borderColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF6366F1),
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Hours per day
+          Text(
+            'Daily school hours (max 8)',
+            style: TextStyle(
+              color: subtitleColor,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _hoursController,
+            keyboardType: TextInputType.number,
+            style: TextStyle(color: textColor),
+            decoration: InputDecoration(
+              hintText: 'e.g., 6',
+              hintStyle: TextStyle(color: mutedColor),
+              filled: true,
+              fillColor: fieldBgColor,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: borderColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF6366F1),
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // API Endpoint
+          Text(
+            'Backend API URL',
+            style: TextStyle(
+              color: subtitleColor,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _apiUrlController,
+            style: TextStyle(color: textColor),
+            decoration: InputDecoration(
+              hintText: 'e.g., http://localhost:8000/api/v1',
+              hintStyle: TextStyle(color: mutedColor),
+              filled: true,
+              fillColor: fieldBgColor,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: borderColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF6366F1),
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            onPressed: _saveSettings,
+            child: const Text(
+              'Save Settings',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final Widget diagnosticsCard = Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+        boxShadow: !isDark
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.analytics_outlined,
+                color: Colors.teal,
+                size: 26,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Diagnostics & Connection',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal.withOpacity(isDark ? 0.2 : 0.1),
+              foregroundColor: isDark
+                  ? Colors.tealAccent
+                  : Colors.teal.shade700,
+              side: BorderSide(
+                color: isDark ? Colors.teal : Colors.teal.shade300,
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _isTestingConnection ? null : _testConnection,
+            icon: _isTestingConnection
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      color: isDark ? Colors.tealAccent : Colors.teal.shade700,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.wifi_tethering),
+            label: const Text(
+              'Verify Backend Connection',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+
+          if (pingResult != null) ...[
+            const SizedBox(height: 20),
+            _buildPingResultWidget(pingResult),
+          ],
+        ],
+      ),
+    );
+
+    final Widget databaseMaintenanceCard = Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+        boxShadow: !isDark
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.storage_outlined,
+                color: Colors.orangeAccent,
+                size: 26,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Database Maintenance',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Clean-up and reset tools with cascade delete warnings.',
+            style: TextStyle(color: mutedColor, fontSize: 12),
+          ),
+          const SizedBox(height: 28),
+
+          // ALERT WARNING BAR
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.redAccent.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.report_problem,
+                  color: Colors.redAccent,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'WARNING: Clear operations permanently delete records. Due to referential integrity constraints, deleting some tables will result in the cascade removal of related data.',
+                    style: TextStyle(
+                      color: isDark ? Colors.white70 : const Color(0xFF475569),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Full Clean Database Button
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent.withOpacity(0.15),
+              foregroundColor: Colors.redAccent,
+              side: const BorderSide(color: Colors.redAccent),
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            onPressed: _clearEntireDatabase,
+            icon: const Icon(Icons.delete_forever),
+            label: const Text(
+              'CLEAR ENTIRE DATABASE',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+          Divider(color: isDark ? Colors.white12 : Colors.black12),
+          const SizedBox(height: 16),
+
+          Text(
+            'Clear Individual Tables',
+            style: TextStyle(
+              color: textColor,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Teachers
+          _buildTableCleanRow(
+            title: 'Teachers',
+            tableName: 'teachers',
+            description:
+                'Delete teachers, availability settings, and related chairs.',
+            warning:
+                'This will permanently remove ALL teachers, their preferences, unavailability schedules, assigned chairs, and the generated school timetable.',
+          ),
+
+          // Classes
+          _buildTableCleanRow(
+            title: 'Classes',
+            tableName: 'classes',
+            description: 'Delete classes and related chairs.',
+            warning:
+                'This will permanently remove all entered classes, all connected chair assignments, and the generated school timetable.',
+          ),
+
+          // Subjects
+          _buildTableCleanRow(
+            title: 'Subjects',
+            tableName: 'subjects',
+            description: 'Delete subjects and related chairs.',
+            warning:
+                'This will permanently remove all teaching subjects, connected chair assignments, and the generated school timetable.',
+          ),
+
+          // Assignments
+          _buildTableCleanRow(
+            title: 'Chairs / Assignments',
+            tableName: 'assignments',
+            description: 'Remove teacher-class associations.',
+            warning:
+                'This will permanently remove all assigned chairs and delete the generated timetable.',
+          ),
+
+          // Timetable
+          _buildTableCleanRow(
+            title: 'School Timetable',
+            tableName: 'timetable',
+            description: 'Delete the generated timetable.',
+            warning:
+                'This will only remove the generated timetable. Teachers, classes, subjects, and chair assignments will remain intact.',
+          ),
+        ],
+      ),
+    );
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Left Column: Configuration & Connection Test
-            Expanded(
-              flex: 5,
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Global Settings Card
-                    Container(
-                      padding: const EdgeInsets.all(28),
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: borderColor),
-                        boxShadow: !isDark
-                            ? [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : null,
-                      ),
+        child: isDesktop
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left Column: Configuration & Connection Test
+                  Expanded(
+                    flex: 5,
+                    child: SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.settings,
-                                color: Color(0xFF6366F1),
-                                size: 26,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Global Settings',
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Configure the basic school structure and server endpoint.',
-                            style: TextStyle(color: mutedColor, fontSize: 12),
-                          ),
-                          const SizedBox(height: 28),
-
-                          // Days per week
-                          Text(
-                            'Weekly working days (max 6)',
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _daysController,
-                            keyboardType: TextInputType.number,
-                            style: TextStyle(color: textColor),
-                            decoration: InputDecoration(
-                              hintText: 'e.g., 5',
-                              hintStyle: TextStyle(color: mutedColor),
-                              filled: true,
-                              fillColor: fieldBgColor,
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: borderColor),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF6366F1),
-                                  width: 1.5,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Hours per day
-                          Text(
-                            'Daily school hours (max 8)',
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _hoursController,
-                            keyboardType: TextInputType.number,
-                            style: TextStyle(color: textColor),
-                            decoration: InputDecoration(
-                              hintText: 'e.g., 6',
-                              hintStyle: TextStyle(color: mutedColor),
-                              filled: true,
-                              fillColor: fieldBgColor,
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: borderColor),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF6366F1),
-                                  width: 1.5,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // API Endpoint
-                          Text(
-                            'Backend API URL',
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _apiUrlController,
-                            style: TextStyle(color: textColor),
-                            decoration: InputDecoration(
-                              hintText: 'e.g., http://localhost:8000/api/v1',
-                              hintStyle: TextStyle(color: mutedColor),
-                              filled: true,
-                              fillColor: fieldBgColor,
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: borderColor),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF6366F1),
-                                  width: 1.5,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                            ),
-                          ),
+                          globalSettingsCard,
                           const SizedBox(height: 24),
-
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF6366F1),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            onPressed: _saveSettings,
-                            child: const Text(
-                              'Save Settings',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
+                          diagnosticsCard,
                         ],
                       ),
                     ),
-
+                  ),
+                  const SizedBox(width: 24),
+                  // Right Column: Database Maintenance Tools & Cascade Warnings
+                  Expanded(
+                    flex: 5,
+                    child: SingleChildScrollView(
+                      child: databaseMaintenanceCard,
+                    ),
+                  ),
+                ],
+              )
+            : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    globalSettingsCard,
                     const SizedBox(height: 24),
-
-                    // Diagnostics Card
-                    Container(
-                      padding: const EdgeInsets.all(28),
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: borderColor),
-                        boxShadow: !isDark
-                            ? [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.analytics_outlined,
-                                color: Colors.teal,
-                                size: 26,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Diagnostics & Connection',
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.teal.withOpacity(
-                                isDark ? 0.2 : 0.1,
-                              ),
-                              foregroundColor: isDark
-                                  ? Colors.tealAccent
-                                  : Colors.teal.shade700,
-                              side: BorderSide(
-                                color: isDark
-                                    ? Colors.teal
-                                    : Colors.teal.shade300,
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: _isTestingConnection
-                                ? null
-                                : _testConnection,
-                            icon: _isTestingConnection
-                                ? SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      color: isDark
-                                          ? Colors.tealAccent
-                                          : Colors.teal.shade700,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.wifi_tethering),
-                            label: const Text(
-                              'Verify Backend Connection',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-
-                          if (pingResult != null) ...[
-                            const SizedBox(height: 20),
-                            _buildPingResultWidget(pingResult),
-                          ],
-                        ],
-                      ),
-                    ),
+                    diagnosticsCard,
+                    const SizedBox(height: 24),
+                    databaseMaintenanceCard,
                   ],
                 ),
               ),
-            ),
-
-            const SizedBox(width: 24),
-
-            // Right Column: Database Maintenance Tools & Cascade Warnings
-            Expanded(
-              flex: 5,
-              child: SingleChildScrollView(
-                child: Container(
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: borderColor),
-                    boxShadow: !isDark
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.storage_outlined,
-                            color: Colors.orangeAccent,
-                            size: 26,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Database Maintenance',
-                            style: TextStyle(
-                              color: textColor,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Clean-up and reset tools with cascade delete warnings.',
-                        style: TextStyle(color: mutedColor, fontSize: 12),
-                      ),
-                      const SizedBox(height: 28),
-
-                      // ALERT WARNING BAR
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.redAccent.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(
-                              Icons.report_problem,
-                              color: Colors.redAccent,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'WARNING: Clear operations permanently delete records. Due to referential integrity constraints, deleting some tables will result in the cascade removal of related data.',
-                                style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white70
-                                      : const Color(0xFF475569),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Full Clean Database Button
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent.withOpacity(0.15),
-                          foregroundColor: Colors.redAccent,
-                          side: const BorderSide(color: Colors.redAccent),
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        onPressed: _clearEntireDatabase,
-                        icon: const Icon(Icons.delete_forever),
-                        label: const Text(
-                          'CLEAR ENTIRE DATABASE',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-                      Divider(color: isDark ? Colors.white12 : Colors.black12),
-                      const SizedBox(height: 16),
-
-                      Text(
-                        'Clear Individual Tables',
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Teachers
-                      _buildTableCleanRow(
-                        title: 'Teachers',
-                        tableName: 'teachers',
-                        description:
-                            'Delete teachers, availability settings, and related chairs.',
-                        warning:
-                            'This will permanently remove ALL teachers, their preferences, unavailability schedules, assigned chairs, and the generated school timetable.',
-                      ),
-
-                      // Classes
-                      _buildTableCleanRow(
-                        title: 'Classes',
-                        tableName: 'classes',
-                        description: 'Delete classes and related chairs.',
-                        warning:
-                            'This will permanently remove all entered classes, all connected chair assignments, and the generated school timetable.',
-                      ),
-
-                      // Subjects
-                      _buildTableCleanRow(
-                        title: 'Subjects',
-                        tableName: 'subjects',
-                        description: 'Delete subjects and related chairs.',
-                        warning:
-                            'This will permanently remove all teaching subjects, connected chair assignments, and the generated school timetable.',
-                      ),
-
-                      // Assignments
-                      _buildTableCleanRow(
-                        title: 'Chairs / Assignments',
-                        tableName: 'assignments',
-                        description: 'Remove teacher-class associations.',
-                        warning:
-                            'This will permanently remove all assigned chairs and delete the generated timetable.',
-                      ),
-
-                      // Timetable
-                      _buildTableCleanRow(
-                        title: 'School Timetable',
-                        tableName: 'timetable',
-                        description: 'Delete the generated timetable.',
-                        warning:
-                            'This will only remove the generated timetable. Teachers, classes, subjects, and chair assignments will remain intact.',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -16,7 +16,7 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: padding ?? const EdgeInsets.all(DesignSystem.spacingXl),
+      padding: padding ?? EdgeInsets.all(DesignSystem.getCardPadding(context)),
       decoration: BoxDecoration(
         color: DesignSystem.getCardColor(context),
         borderRadius: BorderRadius.circular(DesignSystem.radiusXl),

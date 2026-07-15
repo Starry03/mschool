@@ -89,4 +89,79 @@ class DesignSystem {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return isDark ? Colors.white38 : Colors.black38;
   }
+
+  // Screen Breakpoints
+  static ScreenType getScreenType(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width <= 600) return ScreenType.mobile;
+    if (width <= 1050) return ScreenType.tablet;
+    return ScreenType.desktop;
+  }
+
+  // Responsive Spacing Tokens
+  static double getPagePadding(BuildContext context) {
+    final type = getScreenType(context);
+    switch (type) {
+      case ScreenType.mobile: return 12.0;
+      case ScreenType.tablet: return 20.0;
+      case ScreenType.desktop: return 24.0;
+    }
+  }
+
+  static double getCardPadding(BuildContext context) {
+    final type = getScreenType(context);
+    switch (type) {
+      case ScreenType.mobile: return 12.0;
+      case ScreenType.tablet: return 16.0;
+      case ScreenType.desktop: return 20.0;
+    }
+  }
+
+  static double getGridGap(BuildContext context) {
+    final type = getScreenType(context);
+    switch (type) {
+      case ScreenType.mobile: return 12.0;
+      case ScreenType.tablet: return 16.0;
+      case ScreenType.desktop: return 24.0;
+    }
+  }
+
+  // Responsive Typography Tokens
+  static double getTitleLargeSize(BuildContext context) {
+    final type = getScreenType(context);
+    switch (type) {
+      case ScreenType.mobile: return 20.0;
+      case ScreenType.tablet: return 24.0;
+      case ScreenType.desktop: return 28.0;
+    }
+  }
+
+  static double getTitleMediumSize(BuildContext context) {
+    final type = getScreenType(context);
+    switch (type) {
+      case ScreenType.mobile: return 16.0;
+      case ScreenType.tablet: return 18.0;
+      case ScreenType.desktop: return 20.0;
+    }
+  }
+
+  static double getBodyLargeSize(BuildContext context) {
+    final type = getScreenType(context);
+    switch (type) {
+      case ScreenType.mobile: return 14.0;
+      case ScreenType.tablet: return 15.0;
+      case ScreenType.desktop: return 16.0;
+    }
+  }
+
+  static double getBodyMediumSize(BuildContext context) {
+    final type = getScreenType(context);
+    switch (type) {
+      case ScreenType.mobile: return 12.0;
+      case ScreenType.tablet: return 13.0;
+      case ScreenType.desktop: return 14.0;
+    }
+  }
 }
+
+enum ScreenType { mobile, tablet, desktop }

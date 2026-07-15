@@ -174,7 +174,7 @@ class _TeachersViewState extends State<TeachersView> {
       body: _isLoading && _teachers.isEmpty
           ? const Center(child: CircularProgressIndicator(color: DesignSystem.primary))
           : Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(DesignSystem.getPagePadding(context)),
               child: isDesktop
                   ? Row(
                       children: [
@@ -183,7 +183,7 @@ class _TeachersViewState extends State<TeachersView> {
                           flex: 3,
                           child: _buildTeachersListCard(),
                         ),
-                        const SizedBox(width: 24),
+                        SizedBox(width: DesignSystem.getGridGap(context)),
                         // Main area: Constraints and settings
                         Expanded(
                           flex: 7,
@@ -200,7 +200,7 @@ class _TeachersViewState extends State<TeachersView> {
                             height: 350,
                             child: _buildTeachersListCard(),
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: DesignSystem.getGridGap(context)),
                           _selectedTeacher == null
                               ? _buildNoTeacherSelectedView()
                               : _buildTeacherDetailsView(),
@@ -389,38 +389,42 @@ class _TeachersViewState extends State<TeachersView> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
-              ? [DesignSystem.primary.withOpacity(0.2), DesignSystem.secondary.withOpacity(0.1)]
-              : [DesignSystem.primary.withOpacity(0.08), DesignSystem.secondary.withOpacity(0.04)],
+              ? [DesignSystem.primary.withValues(alpha: 0.2), DesignSystem.secondary.withValues(alpha: 0.1)]
+              : [DesignSystem.primary.withValues(alpha: 0.08), DesignSystem.secondary.withValues(alpha: 0.04)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: DesignSystem.primary.withOpacity(0.25)),
+        border: Border.all(color: DesignSystem.primary.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 35,
-            backgroundColor: DesignSystem.primary.withOpacity(0.2),
+            backgroundColor: DesignSystem.primary.withValues(alpha: 0.2),
             child: Text(
               teacher.firstName[0].toUpperCase(),
               style: const TextStyle(color: DesignSystem.primary, fontSize: 30, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(width: 20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                teacher.fullName,
-                style: TextStyle(color: headerTextColor, fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                teacher.email ?? 'No email address configured',
-                style: TextStyle(color: headerSubtitleColor, fontSize: 14),
-              ),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  teacher.fullName,
+                  style: TextStyle(color: headerTextColor, fontSize: 24, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  teacher.email ?? 'No email address configured',
+                  style: TextStyle(color: headerSubtitleColor, fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           )
         ],
       ),
@@ -491,23 +495,41 @@ class _TeachersViewState extends State<TeachersView> {
             final isDarkInner = Theme.of(context).brightness == Brightness.dark;
             final subtitleColorInner = isDarkInner ? Colors.white60 : const Color(0xFF64748B);
             return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: DesignSystem.getFieldColor(context),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                title: Text(
-                  'Prefers consecutive hours',
-                  style: TextStyle(color: isDarkInner ? Colors.white : const Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-                subtitle: Text(
-                  'The solver will try to group the teacher\'s hours on the same day',
-                  style: TextStyle(color: subtitleColorInner, fontSize: 12),
-                ),
-                value: _preferConsecutive,
-                activeThumbColor: DesignSystem.primary,
-                onChanged: (val) => setState(() => _preferConsecutive = val),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Prefers consecutive hours',
+                          style: TextStyle(
+                            color: isDarkInner ? Colors.white : const Color(0xFF0F172A),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Group hours on the same day',
+                          style: TextStyle(color: subtitleColorInner, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Switch(
+                    value: _preferConsecutive,
+                    activeTrackColor: DesignSystem.primary.withValues(alpha: 0.5),
+                    activeThumbColor: DesignSystem.primary,
+                    onChanged: (val) => setState(() => _preferConsecutive = val),
+                  ),
+                ],
               ),
             );
           }),

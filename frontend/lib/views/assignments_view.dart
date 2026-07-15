@@ -129,7 +129,7 @@ class _AssignmentsViewState extends State<AssignmentsView> {
               child: CircularProgressIndicator(color: DesignSystem.primary),
             )
           : Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(DesignSystem.getPagePadding(context)),
               child: isDesktop
                   ? Row(
                       children: [
@@ -138,7 +138,7 @@ class _AssignmentsViewState extends State<AssignmentsView> {
                           flex: 4,
                           child: _buildCreateAssignmentCard(),
                         ),
-                        const SizedBox(width: 24),
+                        SizedBox(width: DesignSystem.getGridGap(context)),
                         // Right column: Assignments list
                         Expanded(
                           flex: 6,
@@ -150,7 +150,7 @@ class _AssignmentsViewState extends State<AssignmentsView> {
                       child: Column(
                         children: [
                           _buildCreateAssignmentCard(),
-                          const SizedBox(height: 24),
+                          SizedBox(height: DesignSystem.getGridGap(context)),
                           SizedBox(
                             height: 450,
                             child: _buildAssignmentsListCard(),
@@ -479,24 +479,25 @@ class _AssignmentsViewState extends State<AssignmentsView> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        a.subject?.name ?? 'Subject',
-                                        style: TextStyle(
-                                          color: textColor,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                  Text(
+                                    a.subject?.name ?? 'Subject',
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
+                                  const SizedBox(height: 2),
                                   Text(
                                     a.teacher?.fullName ?? 'Unknown',
                                     style: TextStyle(
                                       color: subtitleColor,
                                       fontSize: 14,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),

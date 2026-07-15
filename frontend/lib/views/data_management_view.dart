@@ -649,14 +649,14 @@ class _DataManagementViewState extends State<DataManagementView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(DesignSystem.getPagePadding(context)),
         child: isDesktop
             ? Row(
                 children: [
                   Expanded(child: _buildClassesPanel()),
-                  const SizedBox(width: 24),
+                  SizedBox(width: DesignSystem.getGridGap(context)),
                   Expanded(child: _buildSubjectsPanel()),
-                  const SizedBox(width: 24),
+                  SizedBox(width: DesignSystem.getGridGap(context)),
                   Expanded(child: _buildConstraintsPanel()),
                 ],
               )
@@ -664,9 +664,9 @@ class _DataManagementViewState extends State<DataManagementView> {
                 child: Column(
                   children: [
                     SizedBox(height: 400, child: _buildClassesPanel()),
-                    const SizedBox(height: 24),
+                    SizedBox(height: DesignSystem.getGridGap(context)),
                     SizedBox(height: 400, child: _buildSubjectsPanel()),
-                    const SizedBox(height: 24),
+                    SizedBox(height: DesignSystem.getGridGap(context)),
                     SizedBox(height: 500, child: _buildConstraintsPanel()),
                   ],
                 ),

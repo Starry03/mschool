@@ -8,35 +8,41 @@ class GeneratingSpinner extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(
-            width: 80,
-            height: 80,
-            child: CircularProgressIndicator(
-              color: DesignSystem.primary,
-              strokeWidth: 5,
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(
+              width: 80,
+              height: 80,
+              child: CircularProgressIndicator(
+                color: DesignSystem.primary,
+                strokeWidth: 5,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Solving the scheduling model...',
-            style: TextStyle(
-              color: isDark ? Colors.white70 : Colors.black87,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+            const SizedBox(height: 24),
+            Text(
+              'Solving the scheduling model',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black87,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'OR-Tools is calculating the best timetable that satisfies all constraints.',
-            style: TextStyle(
-              color: isDark ? Colors.white38 : Colors.black38,
-              fontSize: 13,
+            const SizedBox(height: 8),
+            Text(
+              'OR-Tools is calculating the best timetable that satisfies all constraints',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isDark ? Colors.white38 : Colors.black38,
+                fontSize: 13,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

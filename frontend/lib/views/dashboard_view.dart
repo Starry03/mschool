@@ -5,7 +5,6 @@ import '../services/pdf_exporter.dart';
 import '../theme/design_system.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_button.dart';
-import '../widgets/app_dropdown.dart';
 import 'components/generating_spinner.dart';
 import 'components/timetable_grid.dart';
 
@@ -493,17 +492,17 @@ class _DashboardViewState extends State<DashboardView> {
               child: CircularProgressIndicator(color: DesignSystem.primary),
             )
           : Padding(
-              padding: const EdgeInsets.all(DesignSystem.spacingXl),
+              padding: EdgeInsets.all(DesignSystem.getPagePadding(context)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildTopToolbar(),
-                  const SizedBox(height: 24),
+                  SizedBox(height: DesignSystem.getGridGap(context)),
 
                   // Diagnostic Error box if solve failed
                   if (_genErrorTitle != null) ...[
                     _buildDiagnosticErrorBox(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: DesignSystem.getGridGap(context)),
                   ],
 
                   // Main Timetable Grid Card
@@ -519,256 +518,384 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   Widget _buildTopToolbar() {
-    return AppCard(
-      padding: const EdgeInsets.all(DesignSystem.spacingLg),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Left section (Toggles + Dropdown)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: DesignSystem.getFieldColor(context),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            _buildToggleButton(
-                              label: 'By Class',
-                              active: _filterType == 'class',
-                              onTap: () {
-                                setState(() {
-                                  _filterType = 'class';
-                                  if (_classes.isNotEmpty) {
-                                    _selectedFilterId = _classes.first.id;
-                                  } else {
-                                    _selectedFilterId = null;
-                                  }
-                                });
-                                _loadTimetable();
-                              },
-                            ),
-                            _buildToggleButton(
-                              label: 'By Teacher',
-                              active: _filterType == 'teacher',
-                              onTap: () {
-                                setState(() {
-                                  _filterType = 'teacher';
-                                  if (_teachers.isNotEmpty) {
-                                    _selectedFilterId = _teachers.first.id;
-                                  } else {
-                                    _selectedFilterId = null;
-                                  }
-                                });
-                                _loadTimetable();
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      if (_filterType == 'class')
-                        _buildToolbarDropdown<SchoolClass>(
-                          value: _classes.any((c) => c.id == _selectedFilterId)
-                              ? _classes.firstWhere((c) => c.id == _selectedFilterId)
-                              : null,
-                          items: _classes,
-                          onChanged: (val) {
-                            setState(() => _selectedFilterId = val?.id);
-                            _loadTimetable();
-                          },
-                          itemAsString: (c) => c.name,
-                        )
-                      else
-                        _buildToolbarDropdown<Teacher>(
-                          value: _teachers.any((t) => t.id == _selectedFilterId)
-                              ? _teachers.firstWhere((t) => t.id == _selectedFilterId)
-                              : null,
-                          items: _teachers,
-                          onChanged: (val) {
-                            setState(() => _selectedFilterId = val?.id);
-                            _loadTimetable();
-                          },
-                          itemAsString: (t) => t.fullName,
-                        ),
-                    ],
-                  ),
-
-                  // Right section (Action buttons)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // History button
-                      AppButton.outlined(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        onPressed: _showHistory,
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.history),
-                            SizedBox(width: 8),
-                            Text(
-                              'History',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-
-                      // Save current timetable button (only when slots are present)
-                      if (_slots.isNotEmpty) ...[
-                        AppButton.outlined(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
-                          color: DesignSystem.success,
-                          onPressed: _saveTimetable,
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.save_outlined),
-                              SizedBox(width: 8),
-                              Text('Save', style: TextStyle(fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        AppButton.outlined(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
-                          color: DesignSystem.primary,
-                          onPressed: () async {
-                            try {
-                              final allSlots = await ApiService.getTimetable();
-                              await PdfExporter.exportTimetable(
-                                slots: allSlots,
-                                teachers: _teachers,
-                                days: widget.schoolSettings.daysPerWeek,
-                                hours: widget.schoolSettings.hoursPerDay,
-                              );
-                            } catch (e) {
-                              _showError('Unable to export PDF: $e');
-                            }
-                          },
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.picture_as_pdf_outlined),
-                              SizedBox(width: 8),
-                              Text(
-                                'Export PDF',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                      ],
-
-                      AppButton.outlined(
-                        color: DesignSystem.error,
-                        onPressed: _clearTimetable,
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.delete_sweep_outlined),
-                            SizedBox(width: 8),
-                            Text('Clear', style: TextStyle(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-
-                      AppButton.primary(
-                        onPressed: _isGenerating ? null : _generateTimetable,
-                        child: _isGenerating
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.autorenew),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Generate Timetable',
-                                    style: TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildToggleButton({
-    required String label,
-    required bool active,
-    required VoidCallback onTap,
-  }) {
+    final width = MediaQuery.of(context).size.width;
+    final isDesktop = width > 900;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: active ? DesignSystem.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active
-                ? Colors.white
-                : (isDark ? Colors.white70 : Colors.black87),
-            fontWeight: active ? FontWeight.bold : FontWeight.normal,
-            fontSize: 14,
+
+    final Widget selectorWidget = _filterType == 'class'
+        ? (_classes.isNotEmpty
+            ? PopupMenuButton<SchoolClass>(
+                onSelected: (val) {
+                  setState(() => _selectedFilterId = val.id);
+                  _loadTimetable();
+                },
+                itemBuilder: (context) => _classes.map((c) {
+                  return PopupMenuItem<SchoolClass>(
+                    value: c,
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: DesignSystem.secondary.withValues(alpha: 0.15),
+                          child: Text(
+                            c.name[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: DesignSystem.secondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(c.name),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                child: _buildSelectorButton(
+                  avatar: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: DesignSystem.secondary.withValues(alpha: 0.15),
+                    child: Text(
+                      (_classes.any((c) => c.id == _selectedFilterId)
+                              ? _classes.firstWhere((c) => c.id == _selectedFilterId).name[0]
+                              : 'C').toUpperCase(),
+                      style: const TextStyle(
+                        color: DesignSystem.secondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  label: _classes.any((c) => c.id == _selectedFilterId)
+                      ? _classes.firstWhere((c) => c.id == _selectedFilterId).name
+                      : 'Select Class',
+                ),
+              )
+            : const SizedBox.shrink())
+        : (_teachers.isNotEmpty
+            ? PopupMenuButton<Teacher>(
+                onSelected: (val) {
+                  setState(() => _selectedFilterId = val.id);
+                  _loadTimetable();
+                },
+                itemBuilder: (context) => _teachers.map((t) {
+                  return PopupMenuItem<Teacher>(
+                    value: t,
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: DesignSystem.primary.withValues(alpha: 0.15),
+                          child: Text(
+                            t.firstName[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: DesignSystem.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(t.fullName),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                child: _buildSelectorButton(
+                  avatar: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: DesignSystem.primary.withValues(alpha: 0.15),
+                    child: Text(
+                      (_teachers.any((t) => t.id == _selectedFilterId)
+                              ? _teachers.firstWhere((t) => t.id == _selectedFilterId).firstName[0]
+                              : 'T').toUpperCase(),
+                      style: const TextStyle(
+                        color: DesignSystem.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  label: _teachers.any((t) => t.id == _selectedFilterId)
+                      ? _teachers.firstWhere((t) => t.id == _selectedFilterId).fullName
+                      : 'Select Teacher',
+                ),
+              )
+            : const SizedBox.shrink());
+
+    final Widget filtersWidget = Row(
+      mainAxisSize: isDesktop ? MainAxisSize.min : MainAxisSize.max,
+      children: [
+        // Mode toggle
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: DesignSystem.getFieldColor(context),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.school, size: 20),
+                color: _filterType == 'class' ? Colors.white : (isDark ? Colors.white54 : Colors.black54),
+                style: IconButton.styleFrom(
+                  backgroundColor: _filterType == 'class' ? DesignSystem.primary : Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.all(6),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _filterType = 'class';
+                    if (_classes.isNotEmpty) {
+                      _selectedFilterId = _classes.first.id;
+                    } else {
+                      _selectedFilterId = null;
+                    }
+                  });
+                  _loadTimetable();
+                },
+                tooltip: 'By Class',
+                constraints: const BoxConstraints(),
+              ),
+              IconButton(
+                icon: const Icon(Icons.person, size: 20),
+                color: _filterType == 'teacher' ? Colors.white : (isDark ? Colors.white54 : Colors.black54),
+                style: IconButton.styleFrom(
+                  backgroundColor: _filterType == 'teacher' ? DesignSystem.primary : Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.all(6),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _filterType = 'teacher';
+                    if (_teachers.isNotEmpty) {
+                      _selectedFilterId = _teachers.first.id;
+                    } else {
+                      _selectedFilterId = null;
+                    }
+                  });
+                  _loadTimetable();
+                },
+                tooltip: 'By Teacher',
+                constraints: const BoxConstraints(),
+              ),
+            ],
           ),
         ),
+        const SizedBox(width: 12),
+        if (isDesktop) selectorWidget else Expanded(child: selectorWidget),
+      ],
+    );
+
+    final Widget actionDropdownMenu = PopupMenuButton<String>(
+      onSelected: (value) async {
+        switch (value) {
+          case 'history':
+            _showHistory();
+            break;
+          case 'save':
+            _saveTimetable();
+            break;
+          case 'export':
+            try {
+              final allSlots = await ApiService.getTimetable();
+              await PdfExporter.exportTimetable(
+                slots: allSlots,
+                teachers: _teachers,
+                days: widget.schoolSettings.daysPerWeek,
+                hours: widget.schoolSettings.hoursPerDay,
+              );
+            } catch (e) {
+              _showError('Unable to export PDF: $e');
+            }
+            break;
+          case 'clear':
+            _clearTimetable();
+            break;
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'history',
+          child: Row(
+            children: [
+              Icon(Icons.history, size: 20),
+              const SizedBox(width: 8),
+              Text('History'),
+            ],
+          ),
+        ),
+        if (_slots.isNotEmpty) ...[
+          const PopupMenuItem(
+            value: 'save',
+            child: Row(
+              children: [
+                Icon(Icons.save_outlined, size: 20, color: DesignSystem.success),
+                const SizedBox(width: 8),
+                Text('Save'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'export',
+            child: Row(
+              children: [
+                Icon(Icons.picture_as_pdf_outlined, size: 20, color: DesignSystem.primary),
+                const SizedBox(width: 8),
+                Text('Export PDF'),
+              ],
+            ),
+          ),
+        ],
+        const PopupMenuItem(
+          value: 'clear',
+          child: Row(
+            children: [
+              Icon(Icons.delete_sweep_outlined, size: 20, color: DesignSystem.error),
+              const SizedBox(width: 8),
+              Text('Clear'),
+            ],
+          ),
+        ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: DesignSystem.getFieldColor(context),
+          borderRadius: BorderRadius.circular(DesignSystem.radiusMd),
+          border: Border.all(
+            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.more_horiz, color: isDark ? Colors.white70 : Colors.black87, size: 20),
+            const SizedBox(width: 6),
+            Text(
+              'Actions',
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.arrow_drop_down,
+              color: isDark ? Colors.white54 : Colors.black54,
+              size: 20,
+            ),
+          ],
+        ),
       ),
+    );
+
+    final Widget generateButton = AppButton.primary(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      onPressed: _isGenerating ? null : _generateTimetable,
+      child: _isGenerating
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            )
+          : const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.autorenew, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Generate',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+    );
+
+    return AppCard(
+      padding: EdgeInsets.all(DesignSystem.getCardPadding(context)),
+      child: isDesktop
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                filtersWidget,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    generateButton,
+                    const SizedBox(width: 12),
+                    actionDropdownMenu,
+                  ],
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                filtersWidget,
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: generateButton),
+                    const SizedBox(width: 8),
+                    actionDropdownMenu,
+                  ],
+                ),
+              ],
+            ),
     );
   }
 
-  Widget _buildToolbarDropdown<T>({
-    required T? value,
-    required List<T> items,
-    required void Function(T?) onChanged,
-    required String Function(T) itemAsString,
-  }) {
-    return AppDropdown<T>(
-      label: '',
-      value: value,
-      items: items,
-      onChanged: onChanged,
-      itemAsString: itemAsString,
-      width: 220,
+  Widget _buildSelectorButton({required Widget avatar, required String label}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = DesignSystem.getTextColor(context);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: DesignSystem.getFieldColor(context),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            avatar,
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.arrow_drop_down,
+              color: isDark ? Colors.white54 : Colors.black54,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -828,7 +955,10 @@ class _DashboardViewState extends State<DashboardView> {
         child: Center(
           child: Text(
             'Select a class or a teacher to view the timetable',
-            style: TextStyle(color: mutedColor, fontSize: 16),
+            style: TextStyle(
+              color: mutedColor,
+              fontSize: DesignSystem.getBodyLargeSize(context),
+            ),
           ),
         ),
       );
@@ -845,13 +975,13 @@ class _DashboardViewState extends State<DashboardView> {
                 _filterType == 'class' ? 'Class Timetable' : 'Teacher Schedule',
                 style: TextStyle(
                   color: textColor,
-                  fontSize: 18,
+                  fontSize: DesignSystem.getTitleMediumSize(context),
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: DesignSystem.getGridGap(context)),
 
           Expanded(
             child: SingleChildScrollView(
