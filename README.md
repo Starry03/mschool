@@ -10,7 +10,13 @@ Make a school buy a 200$ computer to protect the privacy of teachers, other work
 
 ### Client
 
+1. Flutter
+
 ### Server
+
+1. Redis
+2. Mysql
+3. Fastapi
 
 ```sh
 cd backend

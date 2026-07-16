@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../models/models.dart';
 import '../theme/design_system.dart';
 
-
 class LoginView extends StatefulWidget {
   final Function(User user, String token) onLoginSuccess;
 
-  const LoginView({
-    super.key,
-    required this.onLoginSuccess,
-  });
+  const LoginView({super.key, required this.onLoginSuccess});
 
   @override
   State<LoginView> createState() => _LoginViewState();
@@ -22,11 +20,27 @@ class _LoginViewState extends State<LoginView> {
   bool _isLoading = false;
   String? _googleClientId;
   String? _errorMessage;
+  late final TextEditingController _apiUrlController;
 
   @override
   void initState() {
     super.initState();
+    _apiUrlController = TextEditingController(text: ApiService.baseUrl);
+    _apiUrlController.addListener(() async {
+      final url = _apiUrlController.text.trim();
+      ApiService.baseUrl = url;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('api_base_url', url);
+      } catch (_) {}
+    });
     _loadAuthConfig();
+  }
+
+  @override
+  void dispose() {
+    _apiUrlController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadAuthConfig() async {
@@ -41,7 +55,8 @@ class _LoginViewState extends State<LoginView> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = "Impossibile caricare la configurazione di autenticazione: $e\nVerifica che il backend sia attivo.";
+        _errorMessage =
+            "Error loading authentication config: $e\nPlease check that the backend is active.";
       });
     } finally {
       setState(() {
@@ -51,15 +66,18 @@ class _LoginViewState extends State<LoginView> {
   }
 
   Future<void> _handleGoogleSignIn() async {
-    if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.linux || defaultTargetPlatform == TargetPlatform.windows)) {
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.linux ||
+            defaultTargetPlatform == TargetPlatform.windows)) {
       setState(() {
-        _errorMessage = "Google Sign-In non è supportato nativamente su questa piattaforma desktop.\nUsa la versione Web avviando:\n\nflutter run -d chrome";
+        _errorMessage =
+            "Google Sign In is not supported natively on this platform.\nUse the Web version";
       });
       return;
     }
 
     if (_googleClientId == null || _googleClientId!.isEmpty) {
-      _showError("Client ID di Google non caricato. Controlla la connessione al server.");
+      _showError("Google ID client not available.");
       return;
     }
 
@@ -86,8 +104,11 @@ class _LoginViewState extends State<LoginView> {
       final String? idToken = auth.idToken;
       final String? accessToken = auth.accessToken;
 
-      if ((idToken == null || idToken.isEmpty) && (accessToken == null || accessToken.isEmpty)) {
-        throw Exception("Impossibile ottenere credenziali di accesso da Google (ID Token o Access Token vuoti).");
+      if ((idToken == null || idToken.isEmpty) &&
+          (accessToken == null || accessToken.isEmpty)) {
+        throw Exception(
+          "Can't obtain credentials from Google (ID Token or Access Token empty).",
+        );
       }
 
       // Invia il token al backend per validazione e creazione sessione
@@ -100,7 +121,7 @@ class _LoginViewState extends State<LoginView> {
       widget.onLoginSuccess(session.user, session.accessToken);
     } catch (e) {
       setState(() {
-        _errorMessage = "Accesso fallito: $e";
+        _errorMessage = "Login failed: $e";
       });
     } finally {
       if (mounted) {
@@ -113,10 +134,7 @@ class _LoginViewState extends State<LoginView> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: DesignSystem.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: DesignSystem.error),
     );
   }
 
@@ -124,6 +142,11 @@ class _LoginViewState extends State<LoginView> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final size = MediaQuery.of(context).size;
+    final textColor = DesignSystem.getTextColor(context);
+    final subtitleColor = DesignSystem.getSubtitleColor(context);
+    final mutedColor = DesignSystem.getMutedColor(context);
+    final fieldBgColor = DesignSystem.getFieldColor(context);
+    final borderColor = isDark ? Colors.white10 : Colors.black12;
 
     return Scaffold(
       body: Stack(
@@ -158,7 +181,9 @@ class _LoginViewState extends State<LoginView> {
               height: size.width * 0.5,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF6366F1).withOpacity(isDark ? 0.08 : 0.15),
+                color: const Color(
+                  0xFF6366F1,
+                ).withOpacity(isDark ? 0.08 : 0.15),
               ),
             ),
           ),
@@ -170,7 +195,9 @@ class _LoginViewState extends State<LoginView> {
               height: size.width * 0.6,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF8B5CF6).withOpacity(isDark ? 0.06 : 0.12),
+                color: const Color(
+                  0xFF8B5CF6,
+                ).withOpacity(isDark ? 0.06 : 0.12),
               ),
             ),
           ),
@@ -213,7 +240,7 @@ class _LoginViewState extends State<LoginView> {
                       ),
                     ),
                     Text(
-                      'Generatore di Orario Scolastico',
+                      'School Management System',
                       style: TextStyle(
                         fontSize: 14,
                         color: DesignSystem.getSubtitleColor(context),
@@ -235,7 +262,7 @@ class _LoginViewState extends State<LoginView> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Area Riservata',
+                            'Restricted Access',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -245,13 +272,55 @@ class _LoginViewState extends State<LoginView> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'Questo è un sistema chiuso. Solo gli utenti abilitati dall\'amministratore possono effettuare l\'accesso.',
+                            'This is a closed system. Only users enabled by the administrator can access it.',
                             style: TextStyle(
                               fontSize: 12,
                               color: DesignSystem.getMutedColor(context),
                               height: 1.5,
                             ),
                             textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Backend API URL Input
+                          Text(
+                            'Server Backend (API)',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _apiUrlController,
+                            style: TextStyle(color: textColor, fontSize: 13),
+                            decoration: InputDecoration(
+                              hintText: 'http://localhost:8000/api/v1',
+                              hintStyle: TextStyle(color: mutedColor),
+                              filled: true,
+                              fillColor: fieldBgColor,
+                              prefixIcon: const Icon(
+                                Icons.dns_rounded,
+                                size: 18,
+                                color: DesignSystem.primary,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: borderColor),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: DesignSystem.primary,
+                                  width: 1.5,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 28),
 
@@ -302,27 +371,44 @@ class _LoginViewState extends State<LoginView> {
                           else ...[
                             ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: isDark ? const Color(0xFF2E334D) : Colors.white,
-                                foregroundColor: DesignSystem.getTextColor(context),
-                                side: BorderSide(
-                                  color: isDark ? Colors.white10 : Colors.black12,
+                                backgroundColor: isDark
+                                    ? const Color(0xFF2E334D)
+                                    : Colors.white,
+                                foregroundColor: DesignSystem.getTextColor(
+                                  context,
                                 ),
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                side: BorderSide(
+                                  color: isDark
+                                      ? Colors.white10
+                                      : Colors.black12,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 elevation: 0,
                               ),
-                              onPressed: _googleClientId == null ? _loadAuthConfig : _handleGoogleSignIn,
-                              icon: Image.network(
-                                'https://lh3.googleusercontent.com/COxit4gJr1sICwPXS-1QdCDwc8b1th1TqIdELP48R15735QOMTRyCpaFQI4u10pCRGo83WYt-1OPq6hsIpZs=s120',
-                                height: 20,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.login, color: DesignSystem.primary),
+                              onPressed: _googleClientId == null
+                                  ? _loadAuthConfig
+                                  : _handleGoogleSignIn,
+                              icon: ShaderMask(
+                                blendMode: BlendMode.srcIn,
+                                shaderCallback: (bounds) =>
+                                    const LinearGradient(
+                                      colors: [
+                                        DesignSystem.primary,
+                                        DesignSystem.secondary,
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ).createShader(bounds),
+                                child: const FaIcon(FontAwesomeIcons.google),
                               ),
                               label: Text(
                                 _googleClientId == null
-                                    ? 'Riprova a Connettere'
+                                    ? 'Riconnetti al Server'
                                     : 'Accedi con Google',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
@@ -336,7 +422,7 @@ class _LoginViewState extends State<LoginView> {
                     ),
                     const SizedBox(height: 36),
                     Text(
-                      'Sviluppato per uso interno • Gestione Scolastica',
+                      'Open Source at https://github.com/Starry03/mschool',
                       style: TextStyle(
                         fontSize: 11,
                         color: DesignSystem.getMutedColor(context),

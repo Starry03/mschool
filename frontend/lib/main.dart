@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'models/models.dart';
 import 'services/api_service.dart';
 import 'views/dashboard_view.dart';
@@ -7,7 +9,6 @@ import 'views/data_management_view.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'views/assignments_view.dart';
 import 'views/login_view.dart';
-
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,63 @@ class _MyAppState extends State<MyApp> {
   bool _isDarkMode = true;
   User? _currentUser;
   String? _token;
+  bool _isLoadingSession = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPersistedSession();
+  }
+
+  Future<void> _loadPersistedSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      final savedBaseUrl = prefs.getString('api_base_url');
+      if (savedBaseUrl != null && savedBaseUrl.isNotEmpty) {
+        ApiService.baseUrl = savedBaseUrl;
+      }
+
+      final savedToken = prefs.getString('auth_token');
+      final savedUserJson = prefs.getString('current_user');
+
+      if (savedToken != null && savedUserJson != null) {
+        final Map<String, dynamic> userMap = jsonDecode(savedUserJson);
+        setState(() {
+          _token = savedToken;
+          _currentUser = User.fromJson(userMap);
+          ApiService.token = savedToken;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading persisted session: $e');
+    } finally {
+      setState(() {
+        _isLoadingSession = false;
+      });
+    }
+  }
+
+  Future<void> _saveSession(User user, String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_token', token);
+      await prefs.setString('current_user', jsonEncode(user.toJson()));
+      await prefs.setString('api_base_url', ApiService.baseUrl);
+    } catch (e) {
+      debugPrint('Error saving session: $e');
+    }
+  }
+
+  Future<void> _clearSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('auth_token');
+      await prefs.remove('current_user');
+    } catch (e) {
+      debugPrint('Error clearing session: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,36 +112,45 @@ class _MyAppState extends State<MyApp> {
           surface: Color(0xFF1E2235),
         ),
       ),
-      home: _token == null
-          ? LoginView(
-              onLoginSuccess: (user, token) {
-                setState(() {
-                  _currentUser = user;
-                  _token = token;
-                  ApiService.token = token;
-                });
-              },
+      home: _isLoadingSession
+          ? const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF6366F1),
+                ),
+              ),
             )
-          : MainShell(
-              isDarkMode: _isDarkMode,
-              currentUser: _currentUser!,
-              onThemeChanged: (val) {
-                setState(() {
-                  _isDarkMode = val;
-                });
-              },
-              onLogout: () {
-                setState(() {
-                  _currentUser = null;
-                  _token = null;
-                  ApiService.token = null;
-                });
-              },
-            ),
+          : _token == null
+              ? LoginView(
+                  onLoginSuccess: (user, token) {
+                    setState(() {
+                      _currentUser = user;
+                      _token = token;
+                      ApiService.token = token;
+                    });
+                    _saveSession(user, token);
+                  },
+                )
+              : MainShell(
+                  isDarkMode: _isDarkMode,
+                  currentUser: _currentUser!,
+                  onThemeChanged: (val) {
+                    setState(() {
+                      _isDarkMode = val;
+                    });
+                  },
+                  onLogout: () {
+                    setState(() {
+                      _currentUser = null;
+                      _token = null;
+                      ApiService.token = null;
+                    });
+                    _clearSession();
+                  },
+                ),
     );
   }
 }
-
 
 class MainShell extends StatefulWidget {
   final bool isDarkMode;
@@ -103,7 +170,6 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
   SchoolSettings? _schoolSettings;
@@ -113,7 +179,6 @@ class _MainShellState extends State<MainShell> {
   // Settings controllers
   final _daysController = TextEditingController();
   final _hoursController = TextEditingController();
-  final _apiUrlController = TextEditingController(text: ApiService.baseUrl);
   final _allowedDomainController = TextEditingController();
 
   // User Management
@@ -123,7 +188,6 @@ class _MainShellState extends State<MainShell> {
   String _userSelectedRole = 'user';
   List<User> _usersList = [];
   bool _isLoadingUsers = false;
-
 
   @override
   void initState() {
@@ -177,9 +241,6 @@ class _MainShellState extends State<MainShell> {
 
     setState(() => _isLoadingSettings = true);
     try {
-      // Salva prima l'URL del backend
-      ApiService.baseUrl = _apiUrlController.text.trim();
-
       final settings = await ApiService.updateSettings(
         days,
         hours,
@@ -263,7 +324,10 @@ class _MainShellState extends State<MainShell> {
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
               'Rimuovi',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -284,7 +348,6 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-
   bool _isTestingConnection = false;
   Map<String, dynamic>? _connectionResult;
 
@@ -294,16 +357,7 @@ class _MainShellState extends State<MainShell> {
       _connectionResult = null;
     });
     try {
-      // In case they edited the URL but didn't save yet, use the current controller value
-      final originalUrl = ApiService.baseUrl;
-      ApiService.baseUrl = _apiUrlController.text.trim();
-
       final result = await ApiService.testConnection();
-
-      // Restore URL if test failed and they want to keep previous
-      if (!result['success']) {
-        ApiService.baseUrl = originalUrl;
-      }
 
       setState(() {
         _connectionResult = result;
@@ -464,9 +518,9 @@ class _MainShellState extends State<MainShell> {
       {'title': 'Teachers & Constraints', 'icon': Icons.people_outline},
       {'title': 'Classes & Subjects', 'icon': Icons.room_preferences_outlined},
       {'title': 'Chair Assignments', 'icon': Icons.assignment_ind_outlined},
-      if (widget.currentUser.isAdmin) {'title': 'Amministrazione', 'icon': Icons.settings_outlined},
+      if (widget.currentUser.isAdmin)
+        {'title': 'Admin', 'icon': Icons.settings_outlined},
     ];
-
 
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isSmallScreen = screenWidth < 900;
@@ -792,7 +846,10 @@ class _MainShellState extends State<MainShell> {
               },
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
                 child: Row(
                   children: [
                     const Icon(
@@ -818,7 +875,6 @@ class _MainShellState extends State<MainShell> {
       ),
     );
   }
-
 
   Widget _buildSettingsView() {
     final pingResult = _connectionResult;
@@ -938,43 +994,6 @@ class _MainShellState extends State<MainShell> {
             style: TextStyle(color: textColor),
             decoration: InputDecoration(
               hintText: 'e.g., 6',
-              hintStyle: TextStyle(color: mutedColor),
-              filled: true,
-              fillColor: fieldBgColor,
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: borderColor),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFF6366F1),
-                  width: 1.5,
-                ),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // API Endpoint
-          Text(
-            'Backend API URL',
-            style: TextStyle(
-              color: subtitleColor,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _apiUrlController,
-            style: TextStyle(color: textColor),
-            decoration: InputDecoration(
-              hintText: 'e.g., http://localhost:8000/api/v1',
               hintStyle: TextStyle(color: mutedColor),
               filled: true,
               fillColor: fieldBgColor,
@@ -1164,7 +1183,7 @@ class _MainShellState extends State<MainShell> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Gestione Utenti',
+                  'User Management',
                   style: TextStyle(
                     color: textColor,
                     fontSize: 20,
@@ -1178,14 +1197,14 @@ class _MainShellState extends State<MainShell> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Abilita o rimuovi utenti con controllo degli accessi.',
+            'Enable or disable users with access control.',
             style: TextStyle(color: mutedColor, fontSize: 12),
           ),
           const SizedBox(height: 24),
 
           // FORM
           Text(
-            'Registra Nuovo Utente',
+            'Create New User',
             style: TextStyle(
               color: textColor,
               fontSize: 14,
@@ -1210,9 +1229,15 @@ class _MainShellState extends State<MainShell> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF6366F1),
+                        width: 1.5,
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ),
@@ -1222,7 +1247,7 @@ class _MainShellState extends State<MainShell> {
                   controller: _userLastNameController,
                   style: TextStyle(color: textColor),
                   decoration: InputDecoration(
-                    hintText: 'Cognome',
+                    hintText: 'Surname',
                     hintStyle: TextStyle(color: mutedColor),
                     filled: true,
                     fillColor: fieldBgColor,
@@ -1232,9 +1257,15 @@ class _MainShellState extends State<MainShell> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF6366F1),
+                        width: 1.5,
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ),
@@ -1250,7 +1281,7 @@ class _MainShellState extends State<MainShell> {
                   style: TextStyle(color: textColor),
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                    hintText: 'Email (es. prof@school.it)',
+                    hintText: 'Email (eg. prof@school.it)',
                     hintStyle: TextStyle(color: mutedColor),
                     filled: true,
                     fillColor: fieldBgColor,
@@ -1260,9 +1291,15 @@ class _MainShellState extends State<MainShell> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF6366F1),
+                        width: 1.5,
+                      ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ),
@@ -1277,8 +1314,13 @@ class _MainShellState extends State<MainShell> {
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _userSelectedRole,
-                    dropdownColor: isDark ? const Color(0xFF1E2235) : Colors.white,
-                    style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+                    dropdownColor: isDark
+                        ? const Color(0xFF1E2235)
+                        : Colors.white,
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                     items: const [
                       DropdownMenuItem(value: 'user', child: Text('User')),
                       DropdownMenuItem(value: 'admin', child: Text('Admin')),
@@ -1308,7 +1350,7 @@ class _MainShellState extends State<MainShell> {
             onPressed: _createUser,
             icon: const Icon(Icons.add_moderator),
             label: const Text(
-              'Abilita Utente',
+              'Create User',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -1317,7 +1359,7 @@ class _MainShellState extends State<MainShell> {
           const SizedBox(height: 16),
 
           Text(
-            'Utenti Abilitati (${_usersList.length})',
+            'Enabled Users (${_usersList.length})',
             style: TextStyle(
               color: textColor,
               fontSize: 14,
@@ -1335,8 +1377,12 @@ class _MainShellState extends State<MainShell> {
             )
           else if (_usersList.isEmpty)
             Text(
-              'Nessun utente registrato.',
-              style: TextStyle(color: mutedColor, fontSize: 12, fontStyle: FontStyle.italic),
+              'No user registered.',
+              style: TextStyle(
+                color: mutedColor,
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
             )
           else
             Container(
@@ -1372,13 +1418,19 @@ class _MainShellState extends State<MainShell> {
                               ),
                               Text(
                                 user.email,
-                                style: TextStyle(color: mutedColor, fontSize: 11),
+                                style: TextStyle(
+                                  color: mutedColor,
+                                  fontSize: 11,
+                                ),
                               ),
                             ],
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: user.isAdmin
                                 ? const Color(0xFF8B5CF6).withOpacity(0.15)
@@ -1388,7 +1440,9 @@ class _MainShellState extends State<MainShell> {
                           child: Text(
                             user.role.toUpperCase(),
                             style: TextStyle(
-                              color: user.isAdmin ? const Color(0xFF8B5CF6) : const Color(0xFF10B981),
+                              color: user.isAdmin
+                                  ? const Color(0xFF8B5CF6)
+                                  : const Color(0xFF10B981),
                               fontWeight: FontWeight.bold,
                               fontSize: 10,
                             ),
@@ -1396,7 +1450,11 @@ class _MainShellState extends State<MainShell> {
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                            size: 20,
+                          ),
                           onPressed: isSelf ? null : () => _deleteUser(user),
                         ),
                       ],
@@ -1452,7 +1510,7 @@ class _MainShellState extends State<MainShell> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Clean-up and reset tools with cascade delete warnings.',
+            'Useful tools (to make a mess)',
             style: TextStyle(color: mutedColor, fontSize: 12),
           ),
           const SizedBox(height: 28),
@@ -1476,7 +1534,7 @@ class _MainShellState extends State<MainShell> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'WARNING: Clear operations permanently delete records. Due to referential integrity constraints, deleting some tables will result in the cascade removal of related data.',
+                    'Hope I will not need this',
                     style: TextStyle(
                       color: isDark ? Colors.white70 : const Color(0xFF475569),
                       fontSize: 12,
@@ -1625,7 +1683,6 @@ class _MainShellState extends State<MainShell> {
       ),
     );
   }
-
 
   Widget _buildPingResultWidget(Map<String, dynamic> result) {
     final success = result['success'] as bool;
