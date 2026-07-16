@@ -7,15 +7,33 @@ import 'subject_api.dart';
 import 'assignment_api.dart';
 import 'timetable_api.dart';
 import 'system_api.dart';
+import 'auth_api.dart';
+import 'user_api.dart';
 
 class ApiService {
   static String get baseUrl => BaseClient.baseUrl;
   static set baseUrl(String value) => BaseClient.baseUrl = value;
 
+  static String? get token => BaseClient.token;
+  static set token(String? value) => BaseClient.token = value;
+
+  // Authentication
+  static Future<AuthConfigResponse> getAuthConfig() => AuthApi.getAuthConfig();
+  static Future<UserSession> googleLogin({String? idToken, String? accessToken}) =>
+      AuthApi.googleLogin(idToken: idToken, accessToken: accessToken);
+  static Future<void> logout() => AuthApi.logout();
+
+  // User Management
+  static Future<List<User>> getUsers() => UserApi.getUsers();
+  static Future<User> createUser(String firstName, String lastName, String email, String role) =>
+      UserApi.createUser(firstName, lastName, email, role);
+  static Future<User> deleteUser(int id) => UserApi.deleteUser(id);
+
   // School Settings
   static Future<SchoolSettings> getSettings() => SettingsApi.getSettings();
-  static Future<SchoolSettings> updateSettings(int days, int hours) =>
-      SettingsApi.updateSettings(days, hours);
+  static Future<SchoolSettings> updateSettings(int days, int hours, {String? allowedDomain}) =>
+      SettingsApi.updateSettings(days, hours, allowedDomain: allowedDomain);
+
 
   // Teachers
   static Future<List<Teacher>> getTeachers() => TeacherApi.getTeachers();

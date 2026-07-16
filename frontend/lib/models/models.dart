@@ -2,11 +2,13 @@ class SchoolSettings {
   final int id;
   final int daysPerWeek;
   final int hoursPerDay;
+  final String? allowedDomain;
 
   SchoolSettings({
     required this.id,
     required this.daysPerWeek,
     required this.hoursPerDay,
+    this.allowedDomain,
   });
 
   factory SchoolSettings.fromJson(Map<String, dynamic> json) {
@@ -14,13 +16,19 @@ class SchoolSettings {
       id: json['id'] ?? 1,
       daysPerWeek: json['days_per_week'] ?? 5,
       hoursPerDay: json['hours_per_day'] ?? 6,
+      allowedDomain: json['allowed_domain'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'days_per_week': daysPerWeek, 'hours_per_day': hoursPerDay};
+    return {
+      'days_per_week': daysPerWeek,
+      'hours_per_day': hoursPerDay,
+      'allowed_domain': allowedDomain,
+    };
   }
 }
+
 
 class TeacherSettings {
   final int teacherId;
@@ -381,3 +389,42 @@ class SavedTimetable {
     );
   }
 }
+
+class User {
+  final int id;
+  final String email;
+  final String firstName;
+  final String lastName;
+  final String role; // "admin" o "user"
+
+  User({
+    required this.id,
+    required this.email,
+    required this.firstName,
+    required this.lastName,
+    required this.role,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      email: json['email'],
+      firstName: json['first_name'] ?? '',
+      lastName: json['last_name'] ?? '',
+      role: json['role'] ?? 'user',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'email': email,
+      'first_name': firstName,
+      'last_name': lastName,
+      'role': role,
+    };
+  }
+
+  bool get isAdmin => role == 'admin';
+}
+

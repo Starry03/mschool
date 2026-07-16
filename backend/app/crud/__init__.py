@@ -7,3 +7,5 @@ from . import crud_timetable
 from . import crud_system
 from . import crud_class_subject_constraint
 from . import crud_saved_timetable
+from . import crud_user
+

@@ -1,12 +1,11 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'base_client.dart';
 
 class SystemApi {
   static Future<Map<String, dynamic>> testConnection() async {
     final stopwatch = Stopwatch()..start();
     try {
-      final response = await http.get(Uri.parse('${BaseClient.baseUrl}/system/health')).timeout(
+      final response = await BaseClient.get('/system/health').timeout(
         const Duration(seconds: 5),
       );
       stopwatch.stop();
@@ -35,16 +34,17 @@ class SystemApi {
   }
 
   static Future<void> clearDatabase() async {
-    final response = await http.delete(Uri.parse('${BaseClient.baseUrl}/system/clear-db'));
+    final response = await BaseClient.delete('/system/clear-db');
     if (response.statusCode != 204) {
       throw Exception(BaseClient.handleError(response));
     }
   }
 
   static Future<void> clearTable(String tableName) async {
-    final response = await http.delete(Uri.parse('${BaseClient.baseUrl}/system/clear-table/$tableName'));
+    final response = await BaseClient.delete('/system/clear-table/$tableName');
     if (response.statusCode != 204) {
       throw Exception(BaseClient.handleError(response));
     }
   }
 }
+

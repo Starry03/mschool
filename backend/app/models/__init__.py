@@ -10,6 +10,7 @@ from app.models.timetable_slot import TimetableSlot
 from app.models.class_subject_constraint import ClassSubjectConstraint
 from app.models.saved_timetable import SavedTimetable
 from app.models.saved_timetable_slot import SavedTimetableSlot
+from app.models.user import User
 
 __all__ = [
     "Base",
@@ -24,4 +25,6 @@ __all__ = [
     "ClassSubjectConstraint",
     "SavedTimetable",
     "SavedTimetableSlot",
+    "User",
 ]
+

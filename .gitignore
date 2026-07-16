@@ -21,3 +21,6 @@ env/
 # agents
 AGENTS.md
 CLAUDE.md
+
+# generic
+.env

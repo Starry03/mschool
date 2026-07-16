@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer
+from sqlalchemy import Column, Integer, String
 from app.core.database import Base
 
 class SchoolSettings(Base):
@@ -11,3 +11,5 @@ class SchoolSettings(Base):
     id = Column(Integer, primary_key=True, default=1)
     days_per_week = Column(Integer, nullable=False, default=5) # Max 6
     hours_per_day = Column(Integer, nullable=False, default=6) # Max 8
+    allowed_domain = Column(String(255), nullable=True, default="school.it")
+

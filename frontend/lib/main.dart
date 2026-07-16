@@ -6,6 +6,8 @@ import 'views/teachers_view.dart';
 import 'views/data_management_view.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'views/assignments_view.dart';
+import 'views/login_view.dart';
+
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +23,8 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool _isDarkMode = true;
+  User? _currentUser;
+  String? _token;
 
   @override
   Widget build(BuildContext context) {
@@ -50,30 +54,55 @@ class _MyAppState extends State<MyApp> {
           surface: Color(0xFF1E2235),
         ),
       ),
-      home: MainShell(
-        isDarkMode: _isDarkMode,
-        onThemeChanged: (val) {
-          setState(() {
-            _isDarkMode = val;
-          });
-        },
-      ),
+      home: _token == null
+          ? LoginView(
+              onLoginSuccess: (user, token) {
+                setState(() {
+                  _currentUser = user;
+                  _token = token;
+                  ApiService.token = token;
+                });
+              },
+            )
+          : MainShell(
+              isDarkMode: _isDarkMode,
+              currentUser: _currentUser!,
+              onThemeChanged: (val) {
+                setState(() {
+                  _isDarkMode = val;
+                });
+              },
+              onLogout: () {
+                setState(() {
+                  _currentUser = null;
+                  _token = null;
+                  ApiService.token = null;
+                });
+              },
+            ),
     );
   }
 }
 
+
 class MainShell extends StatefulWidget {
   final bool isDarkMode;
   final ValueChanged<bool> onThemeChanged;
+  final User currentUser;
+  final VoidCallback onLogout;
+
   const MainShell({
     super.key,
     required this.isDarkMode,
     required this.onThemeChanged,
+    required this.currentUser,
+    required this.onLogout,
   });
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
+
 
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
@@ -85,6 +114,16 @@ class _MainShellState extends State<MainShell> {
   final _daysController = TextEditingController();
   final _hoursController = TextEditingController();
   final _apiUrlController = TextEditingController(text: ApiService.baseUrl);
+  final _allowedDomainController = TextEditingController();
+
+  // User Management
+  final _userFirstNameController = TextEditingController();
+  final _userLastNameController = TextEditingController();
+  final _userEmailController = TextEditingController();
+  String _userSelectedRole = 'user';
+  List<User> _usersList = [];
+  bool _isLoadingUsers = false;
+
 
   @override
   void initState() {
@@ -114,9 +153,13 @@ class _MainShellState extends State<MainShell> {
         _schoolSettings = settings;
         _daysController.text = settings.daysPerWeek.toString();
         _hoursController.text = settings.hoursPerDay.toString();
+        _allowedDomainController.text = settings.allowedDomain ?? '';
       });
+      if (widget.currentUser.isAdmin) {
+        _loadUsers();
+      }
     } catch (e) {
-      _showError('Unable to load school settings: $e');
+      _showError('Errore nel caricamento delle impostazioni: $e');
     } finally {
       setState(() => _isLoadingSettings = false);
     }
@@ -125,28 +168,122 @@ class _MainShellState extends State<MainShell> {
   Future<void> _saveSettings() async {
     final days = int.tryParse(_daysController.text) ?? 5;
     final hours = int.tryParse(_hoursController.text) ?? 6;
+    final allowedDomain = _allowedDomainController.text.trim();
 
     if (days < 1 || days > 6 || hours < 1 || hours > 8) {
-      _showError('Invalid settings: max 6 days and max 8 hours.');
+      _showError('Impostazioni non valide: max 6 giorni e max 8 ore.');
       return;
     }
 
     setState(() => _isLoadingSettings = true);
     try {
-      // Save backend url first
+      // Salva prima l'URL del backend
       ApiService.baseUrl = _apiUrlController.text.trim();
 
-      final settings = await ApiService.updateSettings(days, hours);
+      final settings = await ApiService.updateSettings(
+        days,
+        hours,
+        allowedDomain: allowedDomain.isNotEmpty ? allowedDomain : null,
+      );
       setState(() {
         _schoolSettings = settings;
       });
-      _showSuccess('Settings saved successfully!');
+      _showSuccess('Impostazioni salvate con successo!');
     } catch (e) {
-      _showError('Unable to save settings: $e');
+      _showError('Impossibile salvare le impostazioni: $e');
     } finally {
       setState(() => _isLoadingSettings = false);
     }
   }
+
+  Future<void> _loadUsers() async {
+    if (!widget.currentUser.isAdmin) return;
+    setState(() => _isLoadingUsers = true);
+    try {
+      final list = await ApiService.getUsers();
+      setState(() {
+        _usersList = list;
+      });
+    } catch (e) {
+      _showError('Impossibile caricare la lista utenti: $e');
+    } finally {
+      setState(() => _isLoadingUsers = false);
+    }
+  }
+
+  Future<void> _createUser() async {
+    final fName = _userFirstNameController.text.trim();
+    final lName = _userLastNameController.text.trim();
+    final email = _userEmailController.text.trim().toLowerCase();
+    final role = _userSelectedRole;
+
+    if (fName.isEmpty || lName.isEmpty || email.isEmpty) {
+      _showError('Tutti i campi dell\'utente sono obbligatori.');
+      return;
+    }
+
+    setState(() => _isLoadingUsers = true);
+    try {
+      await ApiService.createUser(fName, lName, email, role);
+      _userFirstNameController.clear();
+      _userLastNameController.clear();
+      _userEmailController.clear();
+      _showSuccess('Utente creato con successo!');
+      _loadUsers();
+    } catch (e) {
+      _showError('Errore nella creazione dell\'utente: $e');
+    } finally {
+      setState(() => _isLoadingUsers = false);
+    }
+  }
+
+  Future<void> _deleteUser(User user) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E2235),
+        title: const Text(
+          'Rimuovi Utente',
+          style: TextStyle(
+            color: Colors.redAccent,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Sei sicuro di voler rimuovere l\'utente ${user.firstName} ${user.lastName} (${user.email})?\n\nQuesta azione revocherà immediatamente il suo accesso.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annulla', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Rimuovi',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isLoadingUsers = true);
+      try {
+        await ApiService.deleteUser(user.id);
+        _showSuccess('Utente rimosso con successo!');
+        _loadUsers();
+      } catch (e) {
+        _showError('Errore nella rimozione dell\'utente: $e');
+      } finally {
+        setState(() => _isLoadingUsers = false);
+      }
+    }
+  }
+
 
   bool _isTestingConnection = false;
   Map<String, dynamic>? _connectionResult;
@@ -327,8 +464,9 @@ class _MainShellState extends State<MainShell> {
       {'title': 'Teachers & Constraints', 'icon': Icons.people_outline},
       {'title': 'Classes & Subjects', 'icon': Icons.room_preferences_outlined},
       {'title': 'Chair Assignments', 'icon': Icons.assignment_ind_outlined},
-      {'title': 'Settings', 'icon': Icons.settings_outlined},
+      if (widget.currentUser.isAdmin) {'title': 'Amministrazione', 'icon': Icons.settings_outlined},
     ];
+
 
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isSmallScreen = screenWidth < 900;
@@ -604,7 +742,7 @@ class _MainShellState extends State<MainShell> {
             endIndent: 20,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -636,10 +774,51 @@ class _MainShellState extends State<MainShell> {
               ],
             ),
           ),
+          // Logout Button
+          Divider(
+            color: isDark ? Colors.white10 : Colors.black12,
+            height: 1,
+            indent: 20,
+            endIndent: 20,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: InkWell(
+              onTap: () async {
+                try {
+                  await ApiService.logout();
+                } catch (_) {}
+                widget.onLogout();
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.logout_outlined,
+                      color: Colors.redAccent,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 16),
+                    Text(
+                      'Logout',
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.black87,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+
 
   Widget _buildSettingsView() {
     final pingResult = _connectionResult;
@@ -816,6 +995,43 @@ class _MainShellState extends State<MainShell> {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+
+          // Dominio Email Abilitato
+          Text(
+            'Dominio Email Consentito (es. school.it)',
+            style: TextStyle(
+              color: subtitleColor,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _allowedDomainController,
+            style: TextStyle(color: textColor),
+            decoration: InputDecoration(
+              hintText: 'es. istituto.it',
+              hintStyle: TextStyle(color: mutedColor),
+              filled: true,
+              fillColor: fieldBgColor,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: borderColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF6366F1),
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+          ),
           const SizedBox(height: 24),
 
           ElevatedButton(
@@ -829,7 +1045,7 @@ class _MainShellState extends State<MainShell> {
             ),
             onPressed: _saveSettings,
             child: const Text(
-              'Save Settings',
+              'Salva Impostazioni',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -915,6 +1131,280 @@ class _MainShellState extends State<MainShell> {
             const SizedBox(height: 20),
             _buildPingResultWidget(pingResult),
           ],
+        ],
+      ),
+    );
+
+    final Widget userManagementCard = Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+        boxShadow: !isDark
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.people_outline_rounded,
+                color: Color(0xFF6366F1),
+                size: 26,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Gestione Utenti',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Abilita o rimuovi utenti con controllo degli accessi.',
+            style: TextStyle(color: mutedColor, fontSize: 12),
+          ),
+          const SizedBox(height: 24),
+
+          // FORM
+          Text(
+            'Registra Nuovo Utente',
+            style: TextStyle(
+              color: textColor,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _userFirstNameController,
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    hintText: 'Nome',
+                    hintStyle: TextStyle(color: mutedColor),
+                    filled: true,
+                    fillColor: fieldBgColor,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: borderColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: _userLastNameController,
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    hintText: 'Cognome',
+                    hintStyle: TextStyle(color: mutedColor),
+                    filled: true,
+                    fillColor: fieldBgColor,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: borderColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  controller: _userEmailController,
+                  style: TextStyle(color: textColor),
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    hintText: 'Email (es. prof@school.it)',
+                    hintStyle: TextStyle(color: mutedColor),
+                    filled: true,
+                    fillColor: fieldBgColor,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: borderColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: fieldBgColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: borderColor),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _userSelectedRole,
+                    dropdownColor: isDark ? const Color(0xFF1E2235) : Colors.white,
+                    style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+                    items: const [
+                      DropdownMenuItem(value: 'user', child: Text('User')),
+                      DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _userSelectedRole = val;
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _createUser,
+            icon: const Icon(Icons.add_moderator),
+            label: const Text(
+              'Abilita Utente',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Divider(color: isDark ? Colors.white12 : Colors.black12),
+          const SizedBox(height: 16),
+
+          Text(
+            'Utenti Abilitati (${_usersList.length})',
+            style: TextStyle(
+              color: textColor,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          if (_isLoadingUsers)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+              ),
+            )
+          else if (_usersList.isEmpty)
+            Text(
+              'Nessun utente registrato.',
+              style: TextStyle(color: mutedColor, fontSize: 12, fontStyle: FontStyle.italic),
+            )
+          else
+            Container(
+              constraints: const BoxConstraints(maxHeight: 250),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _usersList.length,
+                itemBuilder: (context, index) {
+                  final user = _usersList[index];
+                  final isSelf = user.id == widget.currentUser.id;
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: fieldBgColor.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${user.firstName} ${user.lastName}',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              Text(
+                                user.email,
+                                style: TextStyle(color: mutedColor, fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: user.isAdmin
+                                ? const Color(0xFF8B5CF6).withOpacity(0.15)
+                                : const Color(0xFF10B981).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            user.role.toUpperCase(),
+                            style: TextStyle(
+                              color: user.isAdmin ? const Color(0xFF8B5CF6) : const Color(0xFF10B981),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                          onPressed: isSelf ? null : () => _deleteUser(user),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
         ],
       ),
     );
@@ -1103,11 +1593,18 @@ class _MainShellState extends State<MainShell> {
                     ),
                   ),
                   const SizedBox(width: 24),
-                  // Right Column: Database Maintenance Tools & Cascade Warnings
+                  // Right Column: Database Maintenance Tools & User Management
                   Expanded(
                     flex: 5,
                     child: SingleChildScrollView(
-                      child: databaseMaintenanceCard,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          userManagementCard,
+                          const SizedBox(height: 24),
+                          databaseMaintenanceCard,
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -1119,6 +1616,8 @@ class _MainShellState extends State<MainShell> {
                     const SizedBox(height: 24),
                     diagnosticsCard,
                     const SizedBox(height: 24),
+                    userManagementCard,
+                    const SizedBox(height: 24),
                     databaseMaintenanceCard,
                   ],
                 ),
@@ -1126,6 +1625,7 @@ class _MainShellState extends State<MainShell> {
       ),
     );
   }
+
 
   Widget _buildPingResultWidget(Map<String, dynamic> result) {
     final success = result['success'] as bool;

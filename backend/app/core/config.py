@@ -13,6 +13,23 @@ class Settings(BaseSettings):
     MYSQL_PORT: str = Field(default="3306")
     MYSQL_DATABASE: str = Field(default="school_db")
 
+    # Redis Settings
+    REDIS_HOST: str = Field(default="localhost")
+    REDIS_PORT: int = Field(default=6379)
+
+    # JWT Settings
+    JWT_SECRET: str = Field(default="change_this_secret_in_production_jwt_secret_12345")
+    JWT_ALGORITHM: str = Field(default="HS256")
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60 * 24 * 7)  # 7 giorni
+
+    # Google OAuth Settings
+    PROJECT_ID: str = Field(default="")
+    WEB_CLIENT_ID: str = Field(default="")
+    WEB_CLIENT_SECRET: str = Field(default="")
+
+    # Default Admin Settings
+    DEFAULT_ADMIN_EMAIL: str = Field(default="admin@example.com")
+
     @property
     def DATABASE_URL(self) -> str:
         return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
@@ -24,3 +41,4 @@ class Settings(BaseSettings):
         extra = "ignore"
 
 settings = Settings()
+

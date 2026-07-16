@@ -726,7 +726,7 @@ class _DashboardViewState extends State<DashboardView> {
           child: Row(
             children: [
               Icon(Icons.history, size: 20),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text('History'),
             ],
           ),
@@ -737,7 +737,7 @@ class _DashboardViewState extends State<DashboardView> {
             child: Row(
               children: [
                 Icon(Icons.save_outlined, size: 20, color: DesignSystem.success),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text('Save'),
               ],
             ),
@@ -747,7 +747,7 @@ class _DashboardViewState extends State<DashboardView> {
             child: Row(
               children: [
                 Icon(Icons.picture_as_pdf_outlined, size: 20, color: DesignSystem.primary),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text('Export PDF'),
               ],
             ),
@@ -758,7 +758,7 @@ class _DashboardViewState extends State<DashboardView> {
           child: Row(
             children: [
               Icon(Icons.delete_sweep_outlined, size: 20, color: DesignSystem.error),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text('Clear'),
             ],
           ),
@@ -813,7 +813,7 @@ class _DashboardViewState extends State<DashboardView> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.autorenew, size: 20),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   'Generate',
                   style: TextStyle(fontWeight: FontWeight.bold),
