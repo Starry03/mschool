@@ -2,7 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class BaseClient {
-  static String baseUrl = 'http://localhost:8000/api/v1';
+  static String baseUrl = const String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'http://localhost:8000/api/v1',
+  );
   static String? token;
 
   static Map<String, String> _getHeaders(Map<String, String>? extraHeaders) {
