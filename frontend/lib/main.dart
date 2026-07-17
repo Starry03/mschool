@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'models/models.dart';
 import 'services/api_service.dart';
+import 'services/base_client.dart';
 import 'views/dashboard_view.dart';
 import 'views/teachers_view.dart';
 import 'views/data_management_view.dart';
@@ -24,7 +25,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool _isDarkMode = true;
   User? _currentUser;
   String? _token;
   bool _isLoadingSession = true;
@@ -32,7 +32,34 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    BaseClient.onSessionExpired = _handleSessionExpired;
     _loadPersistedSession();
+  }
+
+  @override
+  void dispose() {
+    BaseClient.onSessionExpired = null;
+    super.dispose();
+  }
+
+  void _logoutLocal() {
+    setState(() {
+      _currentUser = null;
+      _token = null;
+      ApiService.token = null;
+    });
+    _clearSession();
+  }
+
+  void _handleSessionExpired() {
+    _logoutLocal();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Sessione scaduta o non valida. Effettua nuovamente l\'accesso.'),
+        backgroundColor: Colors.orange,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<void> _loadPersistedSession() async {
@@ -90,19 +117,8 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'MSchool',
       debugShowCheckedModeBanner: false,
-      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      themeMode: ThemeMode.dark,
       theme: ThemeData(
-        brightness: Brightness.light,
-        fontFamily: 'Outfit',
-        primaryColor: const Color(0xFF6366F1),
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFF6366F1),
-          secondary: Color(0xFF8B5CF6),
-          surface: Colors.white,
-        ),
-      ),
-      darkTheme: ThemeData(
         brightness: Brightness.dark,
         fontFamily: 'Outfit',
         primaryColor: const Color(0xFF6366F1),
@@ -133,36 +149,19 @@ class _MyAppState extends State<MyApp> {
                   },
                 )
               : MainShell(
-                  isDarkMode: _isDarkMode,
                   currentUser: _currentUser!,
-                  onThemeChanged: (val) {
-                    setState(() {
-                      _isDarkMode = val;
-                    });
-                  },
-                  onLogout: () {
-                    setState(() {
-                      _currentUser = null;
-                      _token = null;
-                      ApiService.token = null;
-                    });
-                    _clearSession();
-                  },
+                  onLogout: _logoutLocal,
                 ),
     );
   }
 }
 
 class MainShell extends StatefulWidget {
-  final bool isDarkMode;
-  final ValueChanged<bool> onThemeChanged;
   final User currentUser;
   final VoidCallback onLogout;
 
   const MainShell({
     super.key,
-    required this.isDarkMode,
-    required this.onThemeChanged,
     required this.currentUser,
     required this.onLogout,
   });
@@ -776,46 +775,6 @@ class _MainShellState extends State<MainShell> {
             ),
           ),
 
-          // Theme Switch
-          Divider(
-            color: isDark ? Colors.white10 : Colors.black12,
-            height: 1,
-            indent: 20,
-            endIndent: 20,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      widget.isDarkMode
-                          ? Icons.dark_mode_outlined
-                          : Icons.light_mode_outlined,
-                      color: isDark ? Colors.white70 : Colors.black87,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      widget.isDarkMode ? 'Dark Theme' : 'Light Theme',
-                      style: TextStyle(
-                        color: isDark ? Colors.white70 : Colors.black87,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Switch(
-                  value: widget.isDarkMode,
-                  activeThumbColor: const Color(0xFF6366F1),
-                  onChanged: widget.onThemeChanged,
-                ),
-              ],
-            ),
-          ),
           // Logout Button
           Divider(
             color: isDark ? Colors.white10 : Colors.black12,

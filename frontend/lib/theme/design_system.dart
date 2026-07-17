@@ -9,7 +9,7 @@ class DesignSystem {
 
   // Background Colors
   static const Color bgDark = Color(0xFF0F172A);
-  static const Color bgLight = Color(0xFFF8FAFC);
+  static const Color bgLight = Color(0xFFF1F5F9);
 
   // Card Backgrounds
   static const Color cardDark = Color(0xFF1E2235);
@@ -17,7 +17,7 @@ class DesignSystem {
 
   // Field Backgrounds
   static const Color fieldDark = Color(0xFF2E334D);
-  static const Color fieldLight = Color(0xFFF1F5F9);
+  static const Color fieldLight = Color(0xFFE2E8F0);
 
   // Spacing Metrics
   static const double spacingXs = 4.0;
