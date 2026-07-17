@@ -9,6 +9,7 @@ import 'views/data_management_view.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'views/assignments_view.dart';
 import 'views/login_view.dart';
+import 'widgets/app_logo.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -642,23 +643,10 @@ class _MainShellState extends State<MainShell> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF6366F1).withOpacity(0.4),
-                        blurRadius: 12,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.school,
-                    color: Colors.white,
-                    size: 28,
-                  ),
+                const AppLogo(
+                  size: 28,
+                  borderRadius: 12,
+                  padding: 8,
                 ),
                 const SizedBox(width: 14),
                 Expanded(

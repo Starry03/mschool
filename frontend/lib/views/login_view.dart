@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../models/models.dart';
 import '../theme/design_system.dart';
+import '../widgets/app_logo.dart';
 
 class LoginView extends StatefulWidget {
   final Function(User user, String token) onLoginSuccess;
@@ -210,25 +211,7 @@ class _LoginViewState extends State<LoginView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Brand / Logo
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: DesignSystem.primary,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: DesignSystem.primary.withOpacity(0.4),
-                            blurRadius: 24,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.school_rounded,
-                        color: Colors.white,
-                        size: 48,
-                      ),
-                    ),
+                    const AppLogo(),
                     const SizedBox(height: 20),
                     Text(
                       'MSchool',

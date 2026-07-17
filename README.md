@@ -6,19 +6,10 @@ One of the projects of the "just buy a nas and self-host everything" kind
 
 Make a school buy a 200$ computer to protect the privacy of teachers, other workers and students
 
-## Start
-
-### Client
-
-1. Flutter
-
-### Server
-
-1. Redis
-2. Mysql
-3. Fastapi
+## Installation
 
 ```sh
-cd backend
-docker compose up --build -d
+cd docker
+docker compose up -d --build  # build & run
+docker compose up -d          # run
 ```
