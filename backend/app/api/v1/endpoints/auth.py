@@ -35,6 +35,8 @@ def google_login(
     id_token_str = login_in.id_token
     access_token_str = login_in.access_token
     email = None
+    first_name = ""
+    last_name = ""
 
     if not id_token_str and not access_token_str:
         raise HTTPException(
@@ -50,6 +52,8 @@ def google_login(
                 settings.WEB_CLIENT_ID
             )
             email = idinfo.get("email")
+            first_name = idinfo.get("given_name", "")
+            last_name = idinfo.get("family_name", "")
             if not email:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -73,6 +77,8 @@ def google_login(
             if resp.status_code == 200:
                 user_info = resp.json()
                 email = user_info.get("email")
+                first_name = user_info.get("given_name", "")
+                last_name = user_info.get("family_name", "")
                 if not email:
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -97,10 +103,37 @@ def google_login(
 
     user = crud.crud_user.get_user_by_email(db, email=email)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Account not authorized. Contact the administrator for activation."
-        )
+        school_settings = crud.crud_settings.get_school_settings(db)
+        allowed_domain = school_settings.allowed_domain
+        is_allowed = False
+        if allowed_domain:
+            domain = allowed_domain.strip().lower()
+            if domain and email.strip().lower().endswith(f"@{domain}"):
+                is_allowed = True
+        
+        if is_allowed:
+            email_parts = email.split("@")[0].split(".")
+            f_name = first_name.strip() if first_name else email_parts[0].capitalize()
+            l_name = last_name.strip() if last_name else (email_parts[1].capitalize() if len(email_parts) > 1 else "User")
+            
+            user_in = schemas.UserCreate(
+                email=email,
+                first_name=f_name,
+                last_name=l_name,
+                role="user"
+            )
+            try:
+                user = crud.crud_user.create_user(db, user_in)
+            except ValueError as ex:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=str(ex)
+                )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Account not authorized. Contact the administrator for activation."
+            )
 
     session_id = str(uuid.uuid4())
     session_data = {

@@ -2,7 +2,7 @@
 
 ## Data flow
 
-The only external request is for google oauth
+The only external request is for google oauth, which is used to ensure only institutional accounts can log in.
 
 ## External Services
 

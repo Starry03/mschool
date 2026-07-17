@@ -1018,7 +1018,7 @@ class _MainShellState extends State<MainShell> {
             controller: _allowedDomainController,
             style: TextStyle(color: textColor),
             decoration: InputDecoration(
-              hintText: 'es. istituto.it',
+              hintText: 'Nessuno (solo utenti registrati)',
               hintStyle: TextStyle(color: mutedColor),
               filled: true,
               fillColor: fieldBgColor,

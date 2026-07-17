@@ -19,6 +19,7 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   bool _isLoading = false;
+  bool _isPinging = false;
   String? _googleClientId;
   String? _errorMessage;
   late final TextEditingController _apiUrlController;
@@ -63,6 +64,50 @@ class _LoginViewState extends State<LoginView> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _pingServer() async {
+    setState(() {
+      _isPinging = true;
+    });
+    try {
+      final res = await ApiService.testConnection();
+      if (!mounted) return;
+      if (res['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Server raggiungibile! Latenza: ${res['ping']} ms. Stato DB: ${res['database']}',
+            ),
+            backgroundColor: DesignSystem.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Impossibile connettersi: ${res['error']}'),
+            backgroundColor: DesignSystem.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore imprevisto: $e'),
+          backgroundColor: DesignSystem.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPinging = false;
+        });
+      }
     }
   }
 
@@ -305,7 +350,34 @@ class _LoginViewState extends State<LoginView> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton.icon(
+                                onPressed: _isPinging ? null : _pingServer,
+                                icon: _isPinging
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: DesignSystem.primary,
+                                        ),
+                                      )
+                                    : const Icon(Icons.bolt_rounded, size: 16),
+                                label: const Text('Testa Connessione'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: DesignSystem.primary,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
 
                           if (_errorMessage != null) ...[
                             Container(
