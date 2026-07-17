@@ -16,19 +16,19 @@ from app.api import deps
 
 api_router = APIRouter()
 
-# Rotte pubbliche o con permessi interni per l'autenticazione
+# Public routes or routes with internal permissions for authentication
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 
-# Rotte riservate agli amministratori
+# Routes reserved for administrators
 api_router.include_router(users.router, prefix="/users", tags=["users"], dependencies=[Depends(deps.get_current_admin)])
 
-# Impostazioni generali (GET pubblica, PUT limitata ad admin internamente)
+# General settings (public GET, internally restricted PUT to admin)
 api_router.include_router(settings.router, prefix="/settings", tags=["settings"])
 
-# System maintenance (ha rotte miste pubbliche/private)
+# System maintenance (mixed public/private routes)
 api_router.include_router(system.router, prefix="/system", tags=["system"])
 
-# Rotte protette per la pianificazione (richiedono autenticazione generica)
+# Protected routes for planning (require general authentication)
 api_router.include_router(teachers.router, prefix="/teachers", tags=["teachers"], dependencies=[Depends(deps.get_current_user)])
 api_router.include_router(classes.router, prefix="/classes", tags=["classes"], dependencies=[Depends(deps.get_current_user)])
 api_router.include_router(subjects.router, prefix="/subjects", tags=["subjects"], dependencies=[Depends(deps.get_current_user)])

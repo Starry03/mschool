@@ -38,7 +38,7 @@ def get_current_user(
             detail="Invalid credentials.",
         )
 
-    # Verifica la sessione in Redis
+    # Verify session in Redis
     session_data = redis_session.get_session(session_id)
     if not session_data:
         raise HTTPException(

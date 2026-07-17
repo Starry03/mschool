@@ -19,7 +19,7 @@ router = APIRouter()
 @router.get("/config", response_model=schemas.AuthConfigResponse)
 def read_auth_config():
     """
-    Restituisce le configurazioni pubbliche per l'autenticazione Google.
+    Returns the public configuration for Google authentication.
     """
     return schemas.AuthConfigResponse(google_client_id=settings.WEB_CLIENT_ID)
 
@@ -29,8 +29,8 @@ def google_login(
     db: Session = Depends(deps.get_db)
 ):
     """
-    Valida il token Google OAuth, controlla se l'utente esiste nel database,
-    crea la sessione in Redis e restituisce il token JWT di sessione.
+    Validates the Google OAuth token, checks if the user exists in the database,
+    creates the session in Redis, and returns the session JWT token.
     """
     id_token_str = login_in.id_token
     access_token_str = login_in.access_token
@@ -39,7 +39,7 @@ def google_login(
     if not id_token_str and not access_token_str:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Fornire id_token o access_token per l'autenticazione."
+            detail="Provide either id_token or access_token for authentication."
         )
 
     if id_token_str:
@@ -53,13 +53,13 @@ def google_login(
             if not email:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Il token Google non contiene un indirizzo email valido."
+                    detail="Google token does not contain a valid email address."
                 )
         except ValueError as e:
             if not access_token_str:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=f"Autenticazione Google (ID Token) fallita: {str(e)}"
+                    detail=f"Google authentication (ID Token) failed: {str(e)}"
                 )
 
     if not email and access_token_str:
@@ -76,30 +76,30 @@ def google_login(
                 if not email:
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="L'access token Google non è associato a un indirizzo email valido."
+                        detail="Google access token is not associated with a valid email address."
                     )
             else:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Autenticazione Google (Access Token) fallita o non valida."
+                    detail="Google authentication (Access Token) failed or invalid."
                 )
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Errore durante la verifica con Google: {str(e)}"
+                detail=f"Error during Google verification: {str(e)}"
             )
 
     if not email:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Autenticazione Google fallita."
+            detail="Google authentication failed."
         )
 
     user = crud.crud_user.get_user_by_email(db, email=email)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Account non autorizzato. Contatta l'amministratore per l'abilitazione."
+            detail="Account not authorized. Contact the administrator for activation."
         )
 
     session_id = str(uuid.uuid4())
@@ -135,7 +135,7 @@ def logout(
     current_user: User = Depends(deps.get_current_user)
 ):
     """
-    Invalida la sessione dell'utente eliminando il record da Redis.
+    Invalidates the user session by deleting the record from Redis.
     """
     token = credentials.credentials
     try:
@@ -150,6 +150,6 @@ def logout(
 @router.get("/me", response_model=schemas.UserResponse)
 def read_current_user(current_user: User = Depends(deps.get_current_user)):
     """
-    Restituisce i dati del profilo dell'utente correntemente loggato.
+    Returns the profile data of the currently logged-in user.
     """
     return current_user

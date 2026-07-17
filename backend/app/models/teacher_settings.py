@@ -4,7 +4,7 @@ from app.core.database import Base
 
 class TeacherSettings(Base):
     """
-    Rappresenta le impostazioni personali del docente (es. limite ore consecutive, limite ore giornaliere).
+    Represents personal teacher settings (e.g. max consecutive hours, max daily hours).
     """
     __tablename__ = "teacher_settings"
 

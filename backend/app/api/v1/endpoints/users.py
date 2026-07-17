@@ -17,7 +17,7 @@ def read_users(
     current_admin: User = Depends(deps.get_current_admin)
 ):
     """
-    Restituisce la lista di tutti gli utenti registrati. Solo per amministratori.
+    Returns the list of all registered users. Only for administrators.
     """
     return crud.crud_user.get_users(db, skip=skip, limit=limit)
 
@@ -28,14 +28,14 @@ def create_user(
     current_admin: User = Depends(deps.get_current_admin)
 ):
     """
-    Crea un nuovo utente abilitato. Solo per amministratori.
-    Valida il dominio email per gli utenti non amministratori.
+    Creates a new enabled user. Only for administrators.
+    Validates the email domain for non-admin users.
     """
     db_user = crud.crud_user.get_user_by_email(db, email=user_in.email)
     if db_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Questo indirizzo email è già registrato nel sistema."
+            detail="This email address is already registered in the system."
         )
     try:
         return crud.crud_user.create_user(db, user_in)
@@ -52,20 +52,20 @@ def delete_user(
     current_admin: User = Depends(deps.get_current_admin)
 ):
     """
-    Rimuove un utente dal sistema. Solo per amministratori.
-    Impedisce all'amministratore di eliminare il proprio account.
+    Removes a user from the system. Only for administrators.
+    Prevents the administrator from deleting their own account.
     """
     if user_id == current_admin.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Operazione non consentita: non puoi eliminare il tuo stesso account amministratore."
+            detail="Operation not allowed: you cannot delete your own admin account."
         )
     
     db_user = crud.crud_user.get_user(db, user_id)
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Utente non trovato."
+            detail="User not found."
         )
     
     return crud.crud_user.delete_user(db, user_id)

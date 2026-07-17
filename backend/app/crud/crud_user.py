@@ -14,8 +14,8 @@ def get_users(db: Session, skip: int = 0, limit: int = 100) -> list[User]:
 
 def validate_user_email(db: Session, email: str, role: str):
     """
-    Valida l'indirizzo email dell'utente in base al dominio configurato.
-    Gli amministratori possono avere qualsiasi dominio email.
+    Validates user email address based on configured domain.
+    Administrators can have any email domain.
     """
     if role == "admin":
         return
@@ -26,12 +26,12 @@ def validate_user_email(db: Session, email: str, role: str):
         if domain:
             email_lower = email.strip().lower()
             if not email_lower.endswith(f"@{domain}"):
-                raise ValueError(f"L'indirizzo email deve appartenere al dominio configurato: {domain}")
+                raise ValueError(f"Email address must belong to the configured domain: {domain}")
 
 def create_user(db: Session, user_in: UserCreate) -> User:
     email = user_in.email.strip().lower()
     
-    # Valida dominio email
+    # Validate email domain
     validate_user_email(db, email, user_in.role)
     
     db_user = User(

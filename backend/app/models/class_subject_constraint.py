@@ -4,8 +4,8 @@ from app.core.database import Base
 
 class ClassSubjectConstraint(Base):
     """
-    Rappresenta il vincolo sul numero di ore settimanali che una determinata classe
-    deve fare per una determinata materia.
+    Represents the constraint on the number of weekly hours a specific class
+    must have for a specific subject.
     """
     __tablename__ = "class_subject_constraints"
 
