@@ -82,7 +82,7 @@ class PdfExporter {
             width: colWidth * hours,
             height: 24,
             decoration: pw.BoxDecoration(
-              color: PdfColor.fromHex('#6366F1'),
+              color: PdfColors.grey200,
               border: pw.Border(
                 top: const pw.BorderSide(color: PdfColors.grey300, width: 0.5),
                 left: const pw.BorderSide(color: PdfColors.grey300, width: 0.5),
@@ -101,7 +101,7 @@ class PdfExporter {
               style: pw.TextStyle(
                 fontWeight: pw.FontWeight.bold,
                 fontSize: 8,
-                color: PdfColors.white,
+                color: PdfColors.black,
               ),
             ),
           ),

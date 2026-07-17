@@ -30,12 +30,12 @@ def get_current_user(
         if email is None or session_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Credenziali di autenticazione non valide.",
+                detail="Invalid credentials.",
             )
     except jwt.PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenziali di autenticazione non valide o scadute.",
+            detail="Invalid credentials.",
         )
 
     # Verifica la sessione in Redis
@@ -43,14 +43,14 @@ def get_current_user(
     if not session_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Sessione scaduta o non attiva. Effettua nuovamente il login.",
+            detail="Session expired or inactive. Please login again.",
         )
 
     user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Utente non trovato.",
+            detail="User not found.",
         )
     return user
 
@@ -60,7 +60,7 @@ def get_current_admin(
     if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Permessi insufficienti. Questa azione è riservata agli amministratori.",
+            detail="Insufficient permissions. This action is reserved for administrators.",
         )
     return current_user
 
