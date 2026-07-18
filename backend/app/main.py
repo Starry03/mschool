@@ -1,7 +1,8 @@
 import app.patch_pydantic
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.core.rate_limiter import global_rate_limiter
 from app.core.database import engine, Base
 from app.api.v1.api import api_router
 
@@ -61,7 +62,8 @@ run_startup_migrations()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    dependencies=[Depends(global_rate_limiter)]
 )
 
 # CORS Middleware (indispensable for Flutter frontend)

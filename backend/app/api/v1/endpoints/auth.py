@@ -13,6 +13,7 @@ from app.api import deps
 from app.core.config import settings
 from app.core.redis import redis_session
 from app.models.user import User
+from app.core.rate_limiter import auth_rate_limiter
 
 router = APIRouter()
 
@@ -28,7 +29,7 @@ def read_auth_config():
         google_client_id_ios=settings.IOS_CLIENT_ID,
     )
 
-@router.post("/google-login", response_model=schemas.UserSession)
+@router.post("/google-login", response_model=schemas.UserSession, dependencies=[Depends(auth_rate_limiter)])
 def google_login(
     login_in: schemas.GoogleLoginRequest,
     db: Session = Depends(deps.get_db)

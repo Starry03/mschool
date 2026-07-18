@@ -4,10 +4,11 @@ from typing import List
 from app.api import deps
 from app import schemas, crud
 from app.services.solver import generate_timetable
+from app.core.rate_limiter import solver_rate_limiter
 
 router = APIRouter()
 
-@router.post("/generate", response_model=schemas.TimetableGenerateResponse)
+@router.post("/generate", response_model=schemas.TimetableGenerateResponse, dependencies=[Depends(solver_rate_limiter)])
 def run_generate_timetable(max_time_seconds: float = 10.0, db: Session = Depends(deps.get_db)):
     # Run the solver service
     success, message, slots_data, error_details = generate_timetable(db, max_time_seconds)
