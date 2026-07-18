@@ -23,6 +23,7 @@ class _LoginViewState extends State<LoginView> {
   bool _isPinging = false;
   String? _googleClientId;
   String? _googleClientIdDesktop;
+  String? _googleClientSecretDesktop;
   String? _googleClientIdAndroid;
   String? _googleClientIdIos;
   String? _errorMessage;
@@ -59,6 +60,7 @@ class _LoginViewState extends State<LoginView> {
       setState(() {
         _googleClientId = config.googleClientId;
         _googleClientIdDesktop = config.googleClientIdDesktop;
+        _googleClientSecretDesktop = config.googleClientSecretDesktop;
         _googleClientIdAndroid = config.googleClientIdAndroid;
         _googleClientIdIos = config.googleClientIdIos;
       });
@@ -128,6 +130,9 @@ class _LoginViewState extends State<LoginView> {
       final desktopClientId = (_googleClientIdDesktop != null && _googleClientIdDesktop!.isNotEmpty)
           ? _googleClientIdDesktop
           : _googleClientId;
+      final desktopClientSecret = (_googleClientIdDesktop != null && _googleClientIdDesktop!.isNotEmpty)
+          ? _googleClientSecretDesktop
+          : null;
 
       if (desktopClientId == null || desktopClientId.isEmpty) {
         _showError("Client ID Google non configurato per Desktop.");
@@ -140,7 +145,10 @@ class _LoginViewState extends State<LoginView> {
       });
 
       try {
-        final tokens = await DesktopOAuth.login(desktopClientId);
+        final tokens = await DesktopOAuth.login(
+          desktopClientId,
+          clientSecret: desktopClientSecret,
+        );
         final String? idToken = tokens['id_token'];
         final String? accessToken = tokens['access_token'];
 
@@ -160,8 +168,13 @@ class _LoginViewState extends State<LoginView> {
         // Notifica il successo al widget principale
         widget.onLoginSuccess(session.user, session.accessToken);
       } catch (e) {
+        String errorMsg = e.toString();
+        if (errorMsg.contains("client_secret")) {
+          errorMsg += "\n\nSuggerimento: Google richiede il client_secret perché stai usando un Client ID di tipo 'Web'. "
+              "Per Desktop, devi creare un Client ID di tipo 'Applicazione desktop' su Google Cloud Console e impostarlo come DESKTOP_CLIENT_ID nel file backend/.env.";
+        }
         setState(() {
-          _errorMessage = "Login fallito: $e";
+          _errorMessage = "Login fallito: $errorMsg";
         });
       } finally {
         if (mounted) {

@@ -5,12 +5,14 @@ import 'base_client.dart';
 class AuthConfigResponse {
   final String googleClientId;
   final String? googleClientIdDesktop;
+  final String? googleClientSecretDesktop;
   final String? googleClientIdAndroid;
   final String? googleClientIdIos;
 
   AuthConfigResponse({
     required this.googleClientId,
     this.googleClientIdDesktop,
+    this.googleClientSecretDesktop,
     this.googleClientIdAndroid,
     this.googleClientIdIos,
   });
@@ -19,6 +21,7 @@ class AuthConfigResponse {
     return AuthConfigResponse(
       googleClientId: json['google_client_id'] ?? '',
       googleClientIdDesktop: json['google_client_id_desktop'],
+      googleClientSecretDesktop: json['google_client_secret_desktop'],
       googleClientIdAndroid: json['google_client_id_android'],
       googleClientIdIos: json['google_client_id_ios'],
     );

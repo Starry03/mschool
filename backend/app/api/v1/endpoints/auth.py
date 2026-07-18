@@ -18,13 +18,12 @@ from app.core.rate_limiter import auth_rate_limiter
 router = APIRouter()
 
 @router.get("/config", response_model=schemas.AuthConfigResponse)
-def read_auth_config():
-    """
-    Returns the public configuration for Google authentication.
-    """
+def get_auth_config():
+    """Exposes public client configurations for login (Google Client IDs)."""
     return schemas.AuthConfigResponse(
         google_client_id=settings.WEB_CLIENT_ID,
         google_client_id_desktop=settings.DESKTOP_CLIENT_ID,
+        google_client_secret_desktop=settings.DESKTOP_CLIENT_SECRET,
         google_client_id_android=settings.ANDROID_CLIENT_ID,
         google_client_id_ios=settings.IOS_CLIENT_ID,
     )

@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 class DesktopOAuth {
   /// Starts a local HTTP loopback server, launches the browser for Google OAuth,
   /// receives the auth code, and exchanges it for tokens.
-  static Future<Map<String, dynamic>> login(String clientId) async {
+  static Future<Map<String, dynamic>> login(String clientId, {String? clientSecret}) async {
     // 1. Bind to loopback on a random free port
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final port = server.port;
@@ -104,6 +104,7 @@ class DesktopOAuth {
         body: {
           'code': code,
           'client_id': clientId,
+          if (clientSecret != null && clientSecret.isNotEmpty) 'client_secret': clientSecret,
           'redirect_uri': redirectUri,
           'grant_type': 'authorization_code',
         },

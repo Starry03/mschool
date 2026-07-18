@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     WEB_CLIENT_ID: str = Field(default="")
     WEB_CLIENT_SECRET: str = Field(default="")
     DESKTOP_CLIENT_ID: str = Field(default="")
+    DESKTOP_CLIENT_SECRET: str = Field(default="")
     ANDROID_CLIENT_ID: str = Field(default="")
     IOS_CLIENT_ID: str = Field(default="")
 
