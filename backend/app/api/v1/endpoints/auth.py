@@ -21,7 +21,12 @@ def read_auth_config():
     """
     Returns the public configuration for Google authentication.
     """
-    return schemas.AuthConfigResponse(google_client_id=settings.WEB_CLIENT_ID)
+    return schemas.AuthConfigResponse(
+        google_client_id=settings.WEB_CLIENT_ID,
+        google_client_id_desktop=settings.DESKTOP_CLIENT_ID,
+        google_client_id_android=settings.ANDROID_CLIENT_ID,
+        google_client_id_ios=settings.IOS_CLIENT_ID,
+    )
 
 @router.post("/google-login", response_model=schemas.UserSession)
 def google_login(

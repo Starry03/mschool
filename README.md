@@ -21,7 +21,7 @@ Make a school buy a 200$ computer to protect the privacy of teachers, other work
 2. set environment variables for oauth client credentials: backend/.env or docker-compose.yml.
 3. create admin user (directly access db as there is not a first account creation thing)
 
-#### Backend/.env
+backend/.env
 ```ini
 # server config
 
@@ -37,7 +37,7 @@ WEB_CLIENT_SECRET=WEB_CLIENT_SECRET
 WEB_REDIRECT_URI=http://localhost:8080
 ```
 
-#### Docker-compose.yml:
+docker-compose.yml:
 ```yaml
 services:
     ...    
@@ -52,10 +52,25 @@ services:
 ```
 
 
-### Build and run
+### Installation options
+
+You can choose one of the following methods based on the hardware you have to host the service
+
+#### All-in-one on one machine (via Docker Compose)
+
+Host frontend and backend on one machine
 
 ```sh
 cd docker
-docker compose up -d --build  # build & run
-docker compose up -d          # run
+docker compose up -d --build # build & run
+docker compose up -d # run (if already built)
+```
+
+#### Host backend
+
+Frontend is to be compiled and installed on user device
+
+```sh
+cd backend
+docker compose up -d --build
 ```

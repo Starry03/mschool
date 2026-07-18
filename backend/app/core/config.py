@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     PROJECT_ID: str = Field(default="")
     WEB_CLIENT_ID: str = Field(default="")
     WEB_CLIENT_SECRET: str = Field(default="")
+    DESKTOP_CLIENT_ID: str = Field(default="")
+    ANDROID_CLIENT_ID: str = Field(default="")
+    IOS_CLIENT_ID: str = Field(default="")
 
     # Default Admin Settings
     DEFAULT_ADMIN_EMAIL: str = Field(default="admin@example.com")

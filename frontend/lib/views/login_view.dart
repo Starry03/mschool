@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../models/models.dart';
 import '../theme/design_system.dart';
 import '../widgets/app_logo.dart';
+import '../services/desktop_oauth.dart';
 
 class LoginView extends StatefulWidget {
   final Function(User user, String token) onLoginSuccess;
@@ -21,6 +22,9 @@ class _LoginViewState extends State<LoginView> {
   bool _isLoading = false;
   bool _isPinging = false;
   String? _googleClientId;
+  String? _googleClientIdDesktop;
+  String? _googleClientIdAndroid;
+  String? _googleClientIdIos;
   String? _errorMessage;
   late final TextEditingController _apiUrlController;
 
@@ -54,6 +58,9 @@ class _LoginViewState extends State<LoginView> {
       final config = await ApiService.getAuthConfig();
       setState(() {
         _googleClientId = config.googleClientId;
+        _googleClientIdDesktop = config.googleClientIdDesktop;
+        _googleClientIdAndroid = config.googleClientIdAndroid;
+        _googleClientIdIos = config.googleClientIdIos;
       });
     } catch (e) {
       setState(() {
@@ -112,18 +119,68 @@ class _LoginViewState extends State<LoginView> {
   }
 
   Future<void> _handleGoogleSignIn() async {
-    if (!kIsWeb &&
+    final isDesktop = !kIsWeb &&
         (defaultTargetPlatform == TargetPlatform.linux ||
-            defaultTargetPlatform == TargetPlatform.windows)) {
+            defaultTargetPlatform == TargetPlatform.windows ||
+            defaultTargetPlatform == TargetPlatform.macOS);
+
+    if (isDesktop) {
+      final desktopClientId = (_googleClientIdDesktop != null && _googleClientIdDesktop!.isNotEmpty)
+          ? _googleClientIdDesktop
+          : _googleClientId;
+
+      if (desktopClientId == null || desktopClientId.isEmpty) {
+        _showError("Client ID Google non configurato per Desktop.");
+        return;
+      }
+
       setState(() {
-        _errorMessage =
-            "Google Sign In is not supported natively on this platform.\nUse the Web version";
+        _isLoading = true;
+        _errorMessage = null;
       });
+
+      try {
+        final tokens = await DesktopOAuth.login(desktopClientId);
+        final String? idToken = tokens['id_token'];
+        final String? accessToken = tokens['access_token'];
+
+        if ((idToken == null || idToken.isEmpty) &&
+            (accessToken == null || accessToken.isEmpty)) {
+          throw Exception(
+            "Impossibile ottenere le credenziali da Google (ID Token o Access Token vuoto).",
+          );
+        }
+
+        // Invia il token al backend per validazione e creazione sessione
+        final session = await ApiService.googleLogin(
+          idToken: idToken,
+          accessToken: accessToken,
+        );
+
+        // Notifica il successo al widget principale
+        widget.onLoginSuccess(session.user, session.accessToken);
+      } catch (e) {
+        setState(() {
+          _errorMessage = "Login fallito: $e";
+        });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
       return;
     }
 
-    if (_googleClientId == null || _googleClientId!.isEmpty) {
-      _showError("Google ID client not available.");
+    // Web / Mobile Flow
+    final mobileOrWebClientId = (defaultTargetPlatform == TargetPlatform.iOS
+            ? (_googleClientIdIos != null && _googleClientIdIos!.isNotEmpty ? _googleClientIdIos : null)
+            : (_googleClientIdAndroid != null && _googleClientIdAndroid!.isNotEmpty ? _googleClientIdAndroid : null)) ??
+        _googleClientId;
+
+    if (mobileOrWebClientId == null || mobileOrWebClientId.isEmpty) {
+      _showError("Client ID Google non disponibile.");
       return;
     }
 
@@ -134,7 +191,7 @@ class _LoginViewState extends State<LoginView> {
 
     try {
       final googleSignIn = GoogleSignIn(
-        clientId: _googleClientId,
+        clientId: mobileOrWebClientId,
         scopes: ['email', 'profile'],
       );
 
@@ -153,7 +210,7 @@ class _LoginViewState extends State<LoginView> {
       if ((idToken == null || idToken.isEmpty) &&
           (accessToken == null || accessToken.isEmpty)) {
         throw Exception(
-          "Can't obtain credentials from Google (ID Token or Access Token empty).",
+          "Impossibile ottenere le credenziali da Google (ID Token o Access Token vuoto).",
         );
       }
 
@@ -167,7 +224,7 @@ class _LoginViewState extends State<LoginView> {
       widget.onLoginSuccess(session.user, session.accessToken);
     } catch (e) {
       setState(() {
-        _errorMessage = "Login failed: $e";
+        _errorMessage = "Login fallito: $e";
       });
     } finally {
       if (mounted) {

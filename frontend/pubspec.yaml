@@ -42,6 +42,7 @@ dependencies:
   google_sign_in: ^6.2.1
   font_awesome_flutter: ^11.0.0
   shared_preferences: ^2.5.5
+  url_launcher: ^6.3.0
 
 
 dev_dependencies:

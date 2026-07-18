@@ -4,12 +4,23 @@ import 'base_client.dart';
 
 class AuthConfigResponse {
   final String googleClientId;
+  final String? googleClientIdDesktop;
+  final String? googleClientIdAndroid;
+  final String? googleClientIdIos;
 
-  AuthConfigResponse({required this.googleClientId});
+  AuthConfigResponse({
+    required this.googleClientId,
+    this.googleClientIdDesktop,
+    this.googleClientIdAndroid,
+    this.googleClientIdIos,
+  });
 
   factory AuthConfigResponse.fromJson(Map<String, dynamic> json) {
     return AuthConfigResponse(
       googleClientId: json['google_client_id'] ?? '',
+      googleClientIdDesktop: json['google_client_id_desktop'],
+      googleClientIdAndroid: json['google_client_id_android'],
+      googleClientIdIos: json['google_client_id_ios'],
     );
   }
 }
@@ -48,8 +59,8 @@ class AuthApi {
     final response = await BaseClient.post(
       '/auth/google-login',
       body: {
-        'id_token': ?idToken,
-        'access_token': ?accessToken,
+        if (idToken != null) 'id_token': idToken,
+        if (accessToken != null) 'access_token': accessToken,
       },
     );
     if (response.statusCode == 200) {
