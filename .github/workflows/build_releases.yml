@@ -74,7 +74,7 @@ jobs:
       - name: Package Linux App
         run: |
           cd frontend/build/linux/x64/release
-          tar -czf ../../../../mschool-linux.tar.gz bundle/
+          tar -czf $GITHUB_WORKSPACE/mschool-linux.tar.gz bundle/
 
       - name: Upload Linux Asset
         uses: softprops/action-gh-release@v2
@@ -108,7 +108,7 @@ jobs:
       - name: Package Windows App
         shell: pwsh
         run: |
-          Compress-Archive -Path frontend/build/windows/x64/runner/Release/* -DestinationPath mschool-windows.zip
+          Compress-Archive -Path frontend/build/windows/x64/runner/Release/* -DestinationPath $env:GITHUB_WORKSPACE/mschool-windows.zip
 
       - name: Upload Windows Asset
         uses: softprops/action-gh-release@v2
@@ -142,7 +142,7 @@ jobs:
       - name: Package macOS App
         run: |
           cd frontend/build/macos/Build/Products/Release
-          zip -r ../../../../../mschool-macos.zip *.app
+          zip -r $GITHUB_WORKSPACE/mschool-macos.zip *.app
 
       - name: Build iOS (No codesign)
         run: |
@@ -154,7 +154,7 @@ jobs:
           cd frontend/build/ios/iphoneos
           mkdir Payload
           cp -r Runner.app Payload/
-          zip -r ../../../mschool-ios-nocodesign.ipa Payload
+          zip -r $GITHUB_WORKSPACE/mschool-ios-nocodesign.ipa Payload
 
       - name: Upload Apple Assets
         uses: softprops/action-gh-release@v2
