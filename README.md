@@ -18,9 +18,10 @@ Make a school buy a 200$ computer to protect the privacy of teachers, other work
 ### Setup
 
 1. oauth has to be configured (https://console.cloud.google.com)
-1. pull image (all-in-one or backend only) or download docker compose file
+1. download docker compose file
 1. download env file
-1. create admin user (directly access db as there is not a first account creation thing)
+1. modify credentials in docker compose file(s)
+1. optional: change port mapping
 
 .env
 ```ini
@@ -81,3 +82,7 @@ docker compose up -d --build
 cd backend
 docker compose -f docker-compose.prod.yml up -d
 ```
+
+#### Create admin user
+
+As you are supposed to be the admin and have access to the server, directly access the db and create your account, which can be outside the configured domain.
