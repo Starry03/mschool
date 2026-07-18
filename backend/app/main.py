@@ -1,6 +1,8 @@
+import os
 import app.patch_pydantic
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.rate_limiter import global_rate_limiter
 from app.core.database import engine, Base
@@ -78,9 +80,14 @@ app.add_middleware(
 # Include API Router
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-@app.get("/")
-def root():
-    return {
-        "message": "Welcome to the School Timetable Generator API!",
-        "documentation": "/docs"
-    }
+# Mount static files for all-in-one deployment if the directory exists
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+else:
+    @app.get("/")
+    def root():
+        return {
+            "message": "Welcome to the School Timetable Generator API!",
+            "documentation": "/docs"
+        }
