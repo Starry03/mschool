@@ -42,17 +42,49 @@ static void my_application_activate(GApplication* application) {
     }
   }
 #endif
+  // Resolve bundled asset icon path
+  g_autofree gchar* exe_dir = g_path_get_dirname(g_file_read_link("/proc/self/exe", NULL));
+  g_autofree gchar* icon_path = NULL;
+  if (exe_dir != NULL) {
+    icon_path = g_build_filename(exe_dir, "data", "flutter_assets", "assets", "logo.png", NULL);
+  }
+
   if (use_header_bar) {
     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
     gtk_widget_show(GTK_WIDGET(header_bar));
     gtk_header_bar_set_title(header_bar, "MSchool");
     gtk_header_bar_set_show_close_button(header_bar, TRUE);
+
+    if (icon_path != NULL && g_file_test(icon_path, G_FILE_TEST_EXISTS)) {
+      GdkPixbuf* hb_pixbuf = gdk_pixbuf_new_from_file_at_scale(icon_path, 24, 24, TRUE, NULL);
+      if (hb_pixbuf != NULL) {
+        GtkWidget* hb_icon = gtk_image_new_from_pixbuf(hb_pixbuf);
+        gtk_widget_show(hb_icon);
+        gtk_header_bar_pack_start(header_bar, hb_icon);
+        g_object_unref(hb_pixbuf);
+      }
+    }
+
     gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
   } else {
     gtk_window_set_title(window, "MSchool");
   }
 
   gtk_window_set_default_size(window, 1280, 720);
+
+  if (icon_path != NULL && g_file_test(icon_path, G_FILE_TEST_EXISTS)) {
+    gtk_window_set_icon_from_file(window, icon_path, NULL);
+    gtk_window_set_default_icon_from_file(icon_path, NULL);
+
+    GdkPixbuf* window_pixbuf = gdk_pixbuf_new_from_file(icon_path, NULL);
+    if (window_pixbuf != NULL) {
+      gtk_window_set_icon(window, window_pixbuf);
+      g_object_unref(window_pixbuf);
+    }
+  }
+
+
+
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(
