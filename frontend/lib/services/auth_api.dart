@@ -62,8 +62,8 @@ class AuthApi {
     final response = await BaseClient.post(
       '/auth/google-login',
       body: {
-        if (idToken != null) 'id_token': idToken,
-        if (accessToken != null) 'access_token': accessToken,
+        'id_token': ?idToken,
+        'access_token': ?accessToken,
       },
     );
     if (response.statusCode == 200) {

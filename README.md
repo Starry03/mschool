@@ -18,34 +18,13 @@ Make a school buy a 200$ computer to protect the privacy of teachers, other work
 ### Setup
 
 1. oauth has to be configured (https://console.cloud.google.com)
-1. download docker compose file
-1. download env file
+1. download docker compose file from the repo
+    - backend only ([download](https://github.com/Starry03/mschool/blob/master/backend/docker-compose.prod.yml))
+    - backend + web frontend ([download](https://github.com/Starry03/mschool/blob/master/docker/docker-compose.prod.yml))
+1. download the env example file ([download](https://github.com/Starry03/mschool/blob/master/backend/.env.example))
+    - rename it to .env
 1. modify credentials in docker compose file(s)
 1. optional: change port mapping
-
-.env
-```ini
-# server config
-
-# oauth
-PROJECT_ID=PROJECT_ID
-AUTH_PROVIDER_X509_CERT_URL=https://www.googleapis.com/oauth2/v1/certs
-AUTH_URI=https://accounts.google.com/o/oauth2/auth
-TOKEN_URI=https://oauth2.googleapis.com/token
-
-# web
-WEB_CLIENT_ID=WEB_CLIENT_ID
-WEB_CLIENT_SECRET=WEB_CLIENT_SECRET
-WEB_REDIRECT_URI=http://localhost:8080
-
-# desktop
-DESKTOP_CLIENT_ID=DESKTOP_CLIENT_ID
-DESKTOP_CLIENT_SECRET=DESKTOP_CLIENT_SECRET
-
-# mobile
-ANDROID_CLIENT_ID=ANDROID_CLIENT_ID
-IOS_CLIENT_ID=IOS_CLIENT_ID
-```
 
 ### Installation options
 
