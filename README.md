@@ -19,9 +19,9 @@ Make a school buy a 200$ computer to protect the privacy of teachers, other work
 
 1. oauth has to be configured (https://console.cloud.google.com)
 1. download docker compose file from the repo
-    - backend only ([download](https://github.com/Starry03/mschool/blob/master/backend/docker-compose.prod.yml))
-    - backend + web frontend ([download](https://github.com/Starry03/mschool/blob/master/docker/docker-compose.prod.yml))
-1. download the env example file ([download](https://github.com/Starry03/mschool/blob/master/backend/.env.example))
+    - backend only ([link](https://github.com/Starry03/mschool/blob/master/backend/docker-compose.prod.yml))
+    - backend + web frontend ([link](https://github.com/Starry03/mschool/blob/master/docker/docker-compose.prod.yml))
+1. download the env example file ([link](https://github.com/Starry03/mschool/blob/master/backend/.env.example))
     - rename it to .env
 1. modify credentials in docker compose file(s)
 1. optional: change port mapping
