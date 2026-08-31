@@ -46,7 +46,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/requirements.txt /backend/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend files
+# Copy backend files and migrations
+COPY backend/alembic.ini /backend/
+COPY backend/alembic /backend/alembic
+COPY backend/entrypoint.sh /backend/
+RUN chmod +x /backend/entrypoint.sh
 COPY backend/app /backend/app
 
 # Copy the compiled Flutter web assets into backend/app/static
@@ -54,4 +58,5 @@ COPY --from=build-frontend /home/builder/app/build/web /backend/app/static
 
 EXPOSE 8000
 
+ENTRYPOINT ["/backend/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

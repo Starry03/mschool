@@ -28,101 +28,93 @@ class TimetableGrid extends StatelessWidget {
         ? const Color(0xFF2E334D).withValues(alpha: 0.2)
         : const Color(0xFFF1F5F9);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double minWidth = 100.0 + (days * 120.0);
-        final double widthToUse = constraints.maxWidth > minWidth
-            ? constraints.maxWidth
-            : minWidth;
-        final bool needsScroll = constraints.maxWidth < minWidth;
+    final slotMap = <int, TimetableSlot>{
+      for (final s in slots) (s.day * 100 + s.hour): s,
+    };
 
-        Widget tableWidget = SizedBox(
-          width: widthToUse,
-          child: Table(
-            border: TableBorder.all(
-              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
-              width: 0.5,
-            ),
-            columnWidths: const {0: FixedColumnWidth(80)},
-            children: [
-              TableRow(
-                decoration: BoxDecoration(color: tableHeaderBg),
-                children: [
-                  const TableCell(
-                    child: Padding(
-                      padding: EdgeInsets.all(12.0),
-                      child: SizedBox(),
-                    ),
-                  ),
-                  ...List.generate(
-                    days,
-                    (d) => TableCell(
+    return RepaintBoundary(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double minWidth = 100.0 + (days * 120.0);
+          final double widthToUse = constraints.maxWidth > minWidth
+              ? constraints.maxWidth
+              : minWidth;
+          final bool needsScroll = constraints.maxWidth < minWidth;
+
+          Widget tableWidget = SizedBox(
+            width: widthToUse,
+            child: Table(
+              border: TableBorder.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                width: 0.5,
+              ),
+              columnWidths: const {0: FixedColumnWidth(80)},
+              children: [
+                TableRow(
+                  decoration: BoxDecoration(color: tableHeaderBg),
+                  children: [
+                    const TableCell(
                       child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Text(
-                          giorniNomi[d],
-                          style: TextStyle(
-                            color: textColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                        padding: EdgeInsets.all(12.0),
+                        child: SizedBox(),
+                      ),
+                    ),
+                    ...List.generate(
+                      days,
+                      (d) => TableCell(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Text(
+                            giorniNomi[d],
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              ...List.generate(hours, (h) {
-                return TableRow(
-                  children: [
-                    TableCell(
-                      verticalAlignment: TableCellVerticalAlignment.middle,
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 24.0,
-                          ),
-                          child: Text(
-                            '${h + 1}',
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                  ],
+                ),
+                ...List.generate(hours, (h) {
+                  return TableRow(
+                    children: [
+                      TableCell(
+                        verticalAlignment: TableCellVerticalAlignment.middle,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 24.0,
+                            ),
+                            child: Text(
+                              '${h + 1}',
+                              style: TextStyle(
+                                color: subtitleColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    ...List.generate(days, (d) {
-                      final slot = slots.firstWhere(
-                        (s) => s.day == d && s.hour == h,
-                        orElse: () => TimetableSlot(
-                          id: -1,
-                          day: d,
-                          hour: h,
-                          classId: -1,
-                          teacherId: -1,
-                          subjectId: -1,
-                          schoolClass: SchoolClass(id: -1, name: ''),
-                          teacher: Teacher(id: -1, firstName: ''),
-                          subject: Subject(id: -1, name: ''),
-                        ),
-                      );
-                      final isAssigned = slot.id != -1;
-                      final cellBgColor = isAssigned
-                          ? DesignSystem.primary.withValues(alpha: 0.08)
-                          : Colors.transparent;
-                      final cellBorderColor = isDark
-                          ? Colors.white.withValues(alpha: 0.04)
-                          : Colors.black.withValues(alpha: 0.04);
+                      ...List.generate(days, (d) {
+                        final slot = slotMap[d * 100 + h];
+                        final isAssigned = slot != null && slot.id != -1;
+                        final cellBgColor = isAssigned
+                            ? DesignSystem.primary.withValues(alpha: 0.08)
+                            : Colors.transparent;
+                        final cellBorderColor = isDark
+                            ? Colors.white.withValues(alpha: 0.04)
+                            : Colors.black.withValues(alpha: 0.04);
 
-                      return TableCell(
-                        child: Container(
-                          height: 80,
-                          margin: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: cellBgColor,
+                        return TableCell(
+                          child: Container(
+                            height: 80,
+                            margin: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: cellBgColor,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: isAssigned
@@ -197,6 +189,6 @@ class TimetableGrid extends StatelessWidget {
           return tableWidget;
         }
       },
-    );
+    ),);
   }
 }

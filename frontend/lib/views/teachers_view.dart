@@ -172,7 +172,7 @@ class _TeachersViewState extends State<TeachersView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: _isLoading && _teachers.isEmpty
-          ? const Center(child: CircularProgressIndicator(color: DesignSystem.primary))
+          ? const Center(child: RepaintBoundary(child: CircularProgressIndicator(color: DesignSystem.primary)))
           : Padding(
               padding: EdgeInsets.all(DesignSystem.getPagePadding(context)),
               child: isDesktop

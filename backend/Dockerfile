@@ -18,11 +18,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt /backend/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
+# Copy project files and migrations
+COPY alembic.ini /backend/
+COPY alembic /backend/alembic
+COPY entrypoint.sh /backend/
+RUN chmod +x /backend/entrypoint.sh
 COPY app /backend/app
 
 # Expose port
 EXPOSE 8000
 
-# Start application using uvicorn
+# Set entrypoint and default command
+ENTRYPOINT ["/backend/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

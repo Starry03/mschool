@@ -25,6 +25,8 @@ def run_pre_checks(
     teachers: List[Teacher],
     assignments: List[Assignment],
     constraints_map: Dict[int, List[Tuple[int, int]]],
+    subject_constraints: Optional[List[ClassSubjectConstraint]] = None,
+    subjects: Optional[List[Subject]] = None,
 ) -> None:
     """
     Performs preventative arithmetic checks on data to detect obvious conflicts before starting the solver.
@@ -75,19 +77,40 @@ def run_pre_checks(
             )
 
     # 3. Check constraints on the number of weekly mandatory hours per subject and class
-    for sc in subject_constraints:
-        class_sub_assigns = [a for a in assignments if a.class_id == sc.class_id and a.subject_id == sc.subject_id]
-        assigned_hours = sum(a.weekly_hours for a in class_sub_assigns)
-        if assigned_hours != sc.weekly_hours:
-            class_name = sc.school_class.name if sc.school_class else f"ID {sc.class_id}"
-            subject_name = sc.subject.name if sc.subject else f"ID {sc.subject_id}"
-            raise SolverDiagnosticException(
-                message=f"Detected inconsistency on the subject hour constraint for the class.",
-                details=(
-                    f"The constraint for class '{class_name}' and subject '{subject_name}' requires exactly {sc.weekly_hours} hours, "
-                    f"but {assigned_hours} hours were assigned in the teaching chairs."
+    if subject_constraints:
+        for sc in subject_constraints:
+            class_sub_assigns = [a for a in assignments if a.class_id == sc.class_id and a.subject_id == sc.subject_id]
+            assigned_hours = sum(a.weekly_hours for a in class_sub_assigns)
+            if assigned_hours != sc.weekly_hours:
+                class_name = sc.school_class.name if sc.school_class else f"ID {sc.class_id}"
+                subject_name = sc.subject.name if sc.subject else f"ID {sc.subject_id}"
+                raise SolverDiagnosticException(
+                    message=f"Detected inconsistency on the subject hour constraint for the class.",
+                    details=(
+                        f"The constraint for class '{class_name}' and subject '{subject_name}' requires exactly {sc.weekly_hours} hours, "
+                        f"but {assigned_hours} hours were assigned in the teaching chairs."
+                    )
                 )
-            )
+
+    # 4. Check subject max_hours_per_day against weekly hours per class
+    if subjects:
+        subjects_map = {s.id: s for s in subjects}
+        classes_map = {c.id: c for c in classes}
+        for a in assignments:
+            s = subjects_map.get(a.subject_id)
+            if s and s.max_hours_per_day is not None:
+                max_possible = days * s.max_hours_per_day
+                if a.weekly_hours > max_possible:
+                    c = classes_map.get(a.class_id)
+                    class_name = c.name if c else f"ID {a.class_id}"
+                    raise SolverDiagnosticException(
+                        message=f"Weekly hours for subject '{s.name}' exceeds daily limits in class '{class_name}'.",
+                        details=(
+                            f"The subject '{s.name}' has {a.weekly_hours} weekly hours assigned in class '{class_name}', "
+                            f"but with a daily limit of {s.max_hours_per_day} hours/day across {days} days, "
+                            f"at most {max_possible} hours can be scheduled."
+                        )
+                    )
 
 def build_and_solve_model(
     days: int,
@@ -97,9 +120,11 @@ def build_and_solve_model(
     assignments: List[Assignment],
     constraints_map: Dict[int, List[Tuple[int, int]]],
     settings_map: Dict[int, TeacherSettings],
-    subjects_map: Dict[int, Optional[int]] = None,
+    subjects_consec_map: Optional[Dict[int, Optional[int]]] = None,
+    subjects_daily_map: Optional[Dict[int, Optional[int]]] = None,
     ignore_constraints: bool = False,
     ignore_settings: bool = False,
+    ignore_subject_limits: bool = False,
     max_time_seconds: float = 5.0
 ) -> Tuple[str, List[Dict[str, int]]]:
     """
@@ -107,8 +132,10 @@ def build_and_solve_model(
     for diagnostic purposes.
     Returns a tuple (status_name, list_of_generated_slots).
     """
-    if subjects_map is None:
-        subjects_map = {}
+    if subjects_consec_map is None:
+        subjects_consec_map = {}
+    if subjects_daily_map is None:
+        subjects_daily_map = {}
     model = cp_model.CpModel()
 
     
@@ -200,7 +227,7 @@ def build_and_solve_model(
 
             for subj_id, subj_assign_list in subj_assigns_map.items():
                 # 1. Consecutive hours limit
-                max_consec_subj = subjects_map.get(subj_id) if subjects_map else None
+                max_consec_subj = subjects_consec_map.get(subj_id)
                 if max_consec_subj is not None and max_consec_subj < hours:
                     for g in giorni_range:
                         for h in range(hours - max_consec_subj):
@@ -213,10 +240,11 @@ def build_and_solve_model(
                             )
 
                 # 2. Daily hours limit
-                max_daily_subj = subjects_daily_map.get(subj_id) if subjects_daily_map else None
+                max_daily_subj = subjects_daily_map.get(subj_id)
                 if max_daily_subj is not None and max_daily_subj < hours:
                     for g in giorni_range:
                         model.Add(
+                            sum(x[a.id, g, h] for a in subj_assign_list for h in ore_range) <= max_daily_subj
                         )
 
     # -------------------------------------------------------------------------

@@ -267,54 +267,60 @@ class _LoginViewState extends State<LoginView> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Gradient
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [
-                        const Color(0xFF020617), // very dark slate
-                        const Color(0xFF0F172A), // dark slate
-                        const Color(0xFF1E1B4B), // dark indigo
-                      ]
-                    : [
-                        const Color(0xFFEEF2F6), // light grey/blue
-                        const Color(0xFFE2E8F0),
-                        const Color(0xFFC7D2FE), // light indigo
-                      ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
+          // Background Gradient and Glowing Circles
+          RepaintBoundary(
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [
+                              const Color(0xFF020617), // very dark slate
+                              const Color(0xFF0F172A), // dark slate
+                              const Color(0xFF1E1B4B), // dark indigo
+                            ]
+                          : [
+                              const Color(0xFFEEF2F6), // light grey/blue
+                              const Color(0xFFE2E8F0),
+                              const Color(0xFFC7D2FE), // light indigo
+                            ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
 
-          // Decorative glowing circles for premium look (glassmorphism feel)
-          Positioned(
-            top: -size.height * 0.2,
-            right: -size.width * 0.1,
-            child: Container(
-              width: size.width * 0.5,
-              height: size.width * 0.5,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(
-                  0xFF6366F1,
-                ).withOpacity(isDark ? 0.08 : 0.15),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -size.height * 0.3,
-            left: -size.width * 0.1,
-            child: Container(
-              width: size.width * 0.6,
-              height: size.width * 0.6,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(
-                  0xFF8B5CF6,
-                ).withOpacity(isDark ? 0.06 : 0.12),
-              ),
+                // Decorative glowing circles for premium look (glassmorphism feel)
+                Positioned(
+                  top: -size.height * 0.2,
+                  right: -size.width * 0.1,
+                  child: Container(
+                    width: size.width * 0.5,
+                    height: size.width * 0.5,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(
+                        0xFF6366F1,
+                      ).withOpacity(isDark ? 0.08 : 0.15),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -size.height * 0.3,
+                  left: -size.width * 0.1,
+                  child: Container(
+                    width: size.width * 0.6,
+                    height: size.width * 0.6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(
+                        0xFF8B5CF6,
+                      ).withOpacity(isDark ? 0.06 : 0.12),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -488,8 +494,10 @@ class _LoginViewState extends State<LoginView> {
                             const Center(
                               child: Padding(
                                 padding: EdgeInsets.symmetric(vertical: 12.0),
-                                child: CircularProgressIndicator(
-                                  color: DesignSystem.primary,
+                                child: RepaintBoundary(
+                                  child: CircularProgressIndicator(
+                                    color: DesignSystem.primary,
+                                  ),
                                 ),
                               ),
                             )

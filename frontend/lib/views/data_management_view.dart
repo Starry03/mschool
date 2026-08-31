@@ -624,7 +624,7 @@ class _DataManagementViewState extends State<DataManagementView> {
             // Constraints List
             Expanded(
               child: _isLoadingConstraints
-                  ? const Center(child: CircularProgressIndicator(color: DesignSystem.primary))
+                  ? const Center(child: RepaintBoundary(child: CircularProgressIndicator(color: DesignSystem.primary)))
                   : _constraints.isEmpty
                       ? Center(
                           child: Text(
@@ -813,7 +813,7 @@ class _DataManagementViewState extends State<DataManagementView> {
           // List
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator(color: DesignSystem.primary))
+                ? const Center(child: RepaintBoundary(child: CircularProgressIndicator(color: DesignSystem.primary)))
                 : itemsCount == 0
                     ? Center(
                         child: Text(

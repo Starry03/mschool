@@ -8,32 +8,28 @@ from app.core.rate_limiter import global_rate_limiter
 from app.core.database import engine, Base
 from app.api.v1.api import api_router
 
-# Initialize Database tables on startup
-# This creates all tables in MySQL if they do not exist
-from sqlalchemy import text, inspect
-from sqlalchemy.orm import Session
+from alembic.config import Config
+from alembic import command
 from app.core.database import SessionLocal
 from app.models.user import User
 
 def run_startup_migrations():
     try:
-        # Create all tables first
-        Base.metadata.create_all(bind=engine)
-        print("Database tables initialized successfully.")
+        # Run Alembic migrations programmatically to bring schema to 'head'
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        alembic_ini_path = os.path.join(backend_dir, "alembic.ini")
 
-        # Check and migrate column 'allowed_domain' in 'school_settings' if not present
-        try:
-            inspector = inspect(engine)
-            # Check if the table exists first to avoid error
-            if 'school_settings' in inspector.get_table_names():
-                columns = [col['name'] for col in inspector.get_columns('school_settings')]
-                if 'allowed_domain' not in columns:
-                    print("Migrating school_settings table: adding allowed_domain column...")
-                    with engine.begin() as conn:
-                        conn.execute(text("ALTER TABLE school_settings ADD COLUMN allowed_domain VARCHAR(255) DEFAULT 'school.it'"))
-                    print("school_settings table migrated successfully.")
-        except Exception as ex:
-            print(f"Warning during column migration: {ex}")
+        if os.path.exists(alembic_ini_path):
+            alembic_cfg = Config(alembic_ini_path)
+            # Ensure the script location is an absolute path
+            alembic_cfg.set_main_option("script_location", os.path.join(backend_dir, "alembic"))
+            alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+            command.upgrade(alembic_cfg, "head")
+            print("Alembic database migrations applied successfully.")
+        else:
+            # Fallback to create_all if alembic.ini is absent
+            Base.metadata.create_all(bind=engine)
+            print("Database tables initialized via create_all fallback.")
 
         # Seed default admin if users table is empty
         try:
@@ -56,7 +52,7 @@ def run_startup_migrations():
             print(f"Warning during admin seeding: {ex}")
 
     except Exception as e:
-        print(f"Error initializing database: {e}")
+        print(f"Error initializing database / running migrations: {e}")
         print("Note: If the database is not running yet, it will be initialized when available.")
 
 run_startup_migrations()

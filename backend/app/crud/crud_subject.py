@@ -20,10 +20,14 @@ def create_subject(db: Session, subject_in: SubjectCreate) -> Subject:
     if subject_in.max_consecutive_hours is not None:
         if subject_in.max_consecutive_hours < 1 or subject_in.max_consecutive_hours > 8:
             raise ValueError("max_consecutive_hours must be between 1 and 8")
+    if subject_in.max_hours_per_day is not None:
+        if subject_in.max_hours_per_day < 1 or subject_in.max_hours_per_day > 8:
+            raise ValueError("max_hours_per_day must be between 1 and 8")
 
     db_subject = Subject(
         name=subject_in.name,
-        max_consecutive_hours=subject_in.max_consecutive_hours
+        max_consecutive_hours=subject_in.max_consecutive_hours,
+        max_hours_per_day=subject_in.max_hours_per_day
     )
     db.add(db_subject)
     db.commit()
@@ -47,6 +51,10 @@ def update_subject(db: Session, subject_id: int, subject_in: SubjectUpdate) -> O
         val = update_data["max_consecutive_hours"]
         if val < 1 or val > 8:
             raise ValueError("max_consecutive_hours must be between 1 and 8")
+    if "max_hours_per_day" in update_data and update_data["max_hours_per_day"] is not None:
+        val = update_data["max_hours_per_day"]
+        if val < 1 or val > 8:
+            raise ValueError("max_hours_per_day must be between 1 and 8")
 
     for key, value in update_data.items():
         setattr(db_subject, key, value)

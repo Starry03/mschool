@@ -14,12 +14,14 @@ class GeneratingSpinner extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(
-              width: 80,
-              height: 80,
-              child: CircularProgressIndicator(
-                color: DesignSystem.primary,
-                strokeWidth: 5,
+            const RepaintBoundary(
+              child: SizedBox(
+                width: 60,
+                height: 60,
+                child: CircularProgressIndicator(
+                  color: DesignSystem.primary,
+                  strokeWidth: 4,
+                ),
               ),
             ),
             const SizedBox(height: 24),

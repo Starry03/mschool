@@ -126,7 +126,9 @@ class _AssignmentsViewState extends State<AssignmentsView> {
       backgroundColor: Colors.transparent,
       body: _isLoading && _assignments.isEmpty
           ? const Center(
-              child: CircularProgressIndicator(color: DesignSystem.primary),
+              child: RepaintBoundary(
+                child: CircularProgressIndicator(color: DesignSystem.primary),
+              ),
             )
           : Padding(
               padding: EdgeInsets.all(DesignSystem.getPagePadding(context)),

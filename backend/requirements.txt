@@ -10,3 +10,4 @@ redis>=5.0.0
 pyjwt>=2.8.0
 requests>=2.31.0
 google-auth>=2.20.0
+alembic>=1.13.0

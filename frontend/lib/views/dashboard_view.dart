@@ -489,7 +489,9 @@ class _DashboardViewState extends State<DashboardView> {
       backgroundColor: Colors.transparent,
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: DesignSystem.primary),
+              child: RepaintBoundary(
+                child: CircularProgressIndicator(color: DesignSystem.primary),
+              ),
             )
           : Padding(
               padding: EdgeInsets.all(DesignSystem.getPagePadding(context)),
@@ -801,12 +803,14 @@ class _DashboardViewState extends State<DashboardView> {
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       onPressed: _isGenerating ? null : _generateTimetable,
       child: _isGenerating
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
+          ? const RepaintBoundary(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
               ),
             )
           : const Row(

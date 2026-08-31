@@ -555,12 +555,11 @@ class _MainShellState extends State<MainShell> {
           Row(
             children: [
               // Sidebar Navigation
-              if (!isSmallScreen) _buildSidebar(navItems),
+              if (!isSmallScreen) RepaintBoundary(child: _buildSidebar(navItems)),
 
               // Main content container with fade transition
               Expanded(
-                child: Container(
-                  color: Colors.transparent,
+                child: RepaintBoundary(
                   child: _buildSelectedView(currentSettings),
                 ),
               ),
@@ -596,22 +595,24 @@ class _MainShellState extends State<MainShell> {
 
   Widget _buildBackgroundGradient() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  const Color(0xFF020617), // very dark slate
-                  const Color(0xFF0F172A), // dark slate
-                  const Color(0xFF1E1B4B), // dark indigo tint
-                ]
-              : [
-                  const Color(0xFFF8FAFC), // light slate
-                  const Color(0xFFF1F5F9), // light grey/blue
-                  const Color(0xFFE2E8F0), // light grey border tint
-                ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return RepaintBoundary(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [
+                    const Color(0xFF020617), // very dark slate
+                    const Color(0xFF0F172A), // dark slate
+                    const Color(0xFF1E1B4B), // dark indigo tint
+                  ]
+                : [
+                    const Color(0xFFF8FAFC), // light slate
+                    const Color(0xFFF1F5F9), // light grey/blue
+                    const Color(0xFFE2E8F0), // light grey border tint
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
       ),
     );
