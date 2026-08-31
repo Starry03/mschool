@@ -117,6 +117,7 @@ class ApiService {
 
   // System Maintenance
   static Future<Map<String, dynamic>> testConnection() => SystemApi.testConnection();
+  static Future<Map<String, dynamic>> getBackendVersion() => SystemApi.getVersion();
   static Future<void> clearDatabase() => SystemApi.clearDatabase();
   static Future<void> clearTable(String tableName) => SystemApi.clearTable(tableName);
 }

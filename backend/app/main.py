@@ -10,8 +10,7 @@ from app.api.v1.api import api_router
 
 from alembic.config import Config
 from alembic import command
-from app.core.database import SessionLocal
-from app.models.user import User
+from app.core.version import __version__
 
 def run_startup_migrations():
     try:
@@ -31,26 +30,6 @@ def run_startup_migrations():
             Base.metadata.create_all(bind=engine)
             print("Database tables initialized via create_all fallback.")
 
-        # Seed default admin if users table is empty
-        try:
-            db = SessionLocal()
-            try:
-                if db.query(User).count() == 0:
-                    admin_email = settings.DEFAULT_ADMIN_EMAIL
-                    default_admin = User(
-                        email=admin_email,
-                        first_name="Admin",
-                        last_name="System",
-                        role="admin"
-                    )
-                    db.add(default_admin)
-                    db.commit()
-                    print(f"Seeded default admin user: {admin_email}")
-            finally:
-                db.close()
-        except Exception as ex:
-            print(f"Warning during admin seeding: {ex}")
-
     except Exception as e:
         print(f"Error initializing database / running migrations: {e}")
         print("Note: If the database is not running yet, it will be initialized when available.")
@@ -60,6 +39,7 @@ run_startup_migrations()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
+    version=__version__,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     dependencies=[Depends(global_rate_limiter)]
 )

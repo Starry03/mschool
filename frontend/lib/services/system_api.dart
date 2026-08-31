@@ -13,6 +13,7 @@ class SystemApi {
         final body = jsonDecode(response.body);
         return {
           'success': true,
+          'version': body['version'] ?? 'unknown',
           'database': body['database'] ?? 'unknown',
           'ping': stopwatch.elapsedMilliseconds,
         };
@@ -30,6 +31,15 @@ class SystemApi {
         'error': e.toString(),
         'ping': stopwatch.elapsedMilliseconds,
       };
+    }
+  }
+
+  static Future<Map<String, dynamic>> getVersion() async {
+    final response = await BaseClient.get('/system/version');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(BaseClient.handleError(response));
     }
   }
 

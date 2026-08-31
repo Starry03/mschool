@@ -6,13 +6,36 @@ from app import crud
 from app.api import deps
 from app.models.user import User
 
+from app.core.version import __version__, __app_name__, __api_version__
+from app.schemas.system import SystemVersionResponse, SystemHealthResponse
+
 router = APIRouter()
 
-@router.get("/health")
+@router.get("/version", response_model=SystemVersionResponse)
+def get_version():
+    """
+    Returns application and backend version metadata.
+    """
+    return SystemVersionResponse(
+        app_name=__app_name__,
+        version=__version__,
+        api_version=__api_version__,
+        environment="production",
+        status="healthy"
+    )
+
+@router.get("/health", response_model=SystemHealthResponse)
 def health_check(db: Session = Depends(get_db)):
+    """
+    Checks backend health, database connectivity, and returns active version.
+    """
     is_healthy = crud.crud_system.check_db_health(db)
     if is_healthy:
-        return {"status": "ok", "database": "connected"}
+        return SystemHealthResponse(
+            status="ok",
+            version=__version__,
+            database="connected"
+        )
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

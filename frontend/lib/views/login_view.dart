@@ -84,10 +84,11 @@ class _LoginViewState extends State<LoginView> {
       final res = await ApiService.testConnection();
       if (!mounted) return;
       if (res['success'] == true) {
+        final versionStr = res['version'] != null ? ' (v${res['version']})' : '';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Server raggiungibile! Latenza: ${res['ping']} ms. Stato DB: ${res['database']}',
+              'Server raggiungibile$versionStr! Latenza: ${res['ping']} ms. Stato DB: ${res['database']}',
             ),
             backgroundColor: DesignSystem.success,
             behavior: SnackBarBehavior.floating,

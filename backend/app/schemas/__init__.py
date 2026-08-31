@@ -9,6 +9,7 @@ from app.schemas.timetable_slot import TimetableSlotBase, TimetableSlotCreate, T
 from app.schemas.class_subject_constraint import ClassSubjectConstraintBase, ClassSubjectConstraintCreate, ClassSubjectConstraint, ClassSubjectConstraintDetail
 from app.schemas.saved_timetable import SavedTimetableBase, SavedTimetableCreate, SavedTimetable, SavedTimetableDetail, SavedTimetableSlot, SavedTimetableSlotDetail
 from app.schemas.user import UserBase, UserCreate, UserUpdate, UserResponse, GoogleLoginRequest, UserSession, AuthConfigResponse
+from app.schemas.system import SystemVersionResponse, SystemHealthResponse
 
 __all__ = [
     "TeacherBase",
@@ -61,5 +62,7 @@ __all__ = [
     "GoogleLoginRequest",
     "UserSession",
     "AuthConfigResponse",
+    "SystemVersionResponse",
+    "SystemHealthResponse",
 ]
 

@@ -39,3 +39,4 @@ class AuthConfigResponse(BaseModel):
     google_client_secret_desktop: Optional[str] = None
     google_client_id_android: Optional[str] = None
     google_client_id_ios: Optional[str] = None
+    has_admin: bool = True

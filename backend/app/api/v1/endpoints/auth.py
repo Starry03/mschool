@@ -18,14 +18,16 @@ from app.core.rate_limiter import auth_rate_limiter
 router = APIRouter()
 
 @router.get("/config", response_model=schemas.AuthConfigResponse)
-def get_auth_config():
-    """Exposes public client configurations for login (Google Client IDs)."""
+def get_auth_config(db: Session = Depends(deps.get_db)):
+    """Exposes public client configurations for login (Google Client IDs) and initial setup status."""
+    has_admin = db.query(User).filter(User.role == "admin").count() > 0
     return schemas.AuthConfigResponse(
         google_client_id=settings.WEB_CLIENT_ID,
         google_client_id_desktop=settings.DESKTOP_CLIENT_ID,
         google_client_secret_desktop=settings.DESKTOP_CLIENT_SECRET,
         google_client_id_android=settings.ANDROID_CLIENT_ID,
         google_client_id_ios=settings.IOS_CLIENT_ID,
+        has_admin=has_admin,
     )
 
 @router.post("/google-login", response_model=schemas.UserSession, dependencies=[Depends(auth_rate_limiter)])
@@ -36,6 +38,7 @@ def google_login(
     """
     Validates the Google OAuth token, checks if the user exists in the database,
     creates the session in Redis, and returns the session JWT token.
+    If no admin exists in the database, the first user to log in automatically becomes Admin.
     """
     id_token_str = login_in.id_token
     access_token_str = login_in.access_token
@@ -108,24 +111,21 @@ def google_login(
 
     user = crud.crud_user.get_user_by_email(db, email=email)
     if not user:
-        school_settings = crud.crud_settings.get_school_settings(db)
-        allowed_domain = school_settings.allowed_domain
-        is_allowed = False
-        if allowed_domain:
-            domain = allowed_domain.strip().lower()
-            if domain and email.strip().lower().endswith(f"@{domain}"):
-                is_allowed = True
-        
-        if is_allowed:
+        # Check if this is the first setup (no admin registered yet)
+        admin_count = db.query(User).filter(User.role == "admin").count()
+        is_first_run_admin = (admin_count == 0)
+
+        if is_first_run_admin:
+            # First-time initial setup: grant the first Google user the 'admin' role!
             email_parts = email.split("@")[0].split(".")
             f_name = first_name.strip() if first_name else email_parts[0].capitalize()
-            l_name = last_name.strip() if last_name else (email_parts[1].capitalize() if len(email_parts) > 1 else "User")
+            l_name = last_name.strip() if last_name else (email_parts[1].capitalize() if len(email_parts) > 1 else "Admin")
             
             user_in = schemas.UserCreate(
                 email=email,
                 first_name=f_name,
                 last_name=l_name,
-                role="user"
+                role="admin"
             )
             try:
                 user = crud.crud_user.create_user(db, user_in)
@@ -135,10 +135,38 @@ def google_login(
                     detail=str(ex)
                 )
         else:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Account not authorized. Contact the administrator for activation."
-            )
+            # Regular user registration check against allowed_domain
+            school_settings = crud.crud_settings.get_school_settings(db)
+            allowed_domain = school_settings.allowed_domain
+            is_allowed = False
+            if allowed_domain:
+                domain = allowed_domain.strip().lower()
+                if domain and email.strip().lower().endswith(f"@{domain}"):
+                    is_allowed = True
+            
+            if is_allowed:
+                email_parts = email.split("@")[0].split(".")
+                f_name = first_name.strip() if first_name else email_parts[0].capitalize()
+                l_name = last_name.strip() if last_name else (email_parts[1].capitalize() if len(email_parts) > 1 else "User")
+                
+                user_in = schemas.UserCreate(
+                    email=email,
+                    first_name=f_name,
+                    last_name=l_name,
+                    role="user"
+                )
+                try:
+                    user = crud.crud_user.create_user(db, user_in)
+                except ValueError as ex:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=str(ex)
+                    )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Account not authorized. Contact the administrator for activation."
+                )
 
     session_id = str(uuid.uuid4())
     session_data = {

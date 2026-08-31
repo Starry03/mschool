@@ -1635,6 +1635,7 @@ class _MainShellState extends State<MainShell> {
   Widget _buildPingResultWidget(Map<String, dynamic> result) {
     final success = result['success'] as bool;
     final ping = result['ping'] as int;
+    final version = result['version'] as String?;
     final dbStatus = result['database'] as String?;
     final error = result['error'] as String?;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1678,6 +1679,15 @@ class _MainShellState extends State<MainShell> {
           ),
           const SizedBox(height: 12),
           if (success) ...[
+            Text(
+              '• Server Version: ${version ?? "unknown"}',
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black87,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
             Text(
               '• Database: $dbStatus',
               style: TextStyle(
