@@ -32,10 +32,26 @@ class SubjectApi {
     }
   }
 
-  static Future<Subject> updateSubject(int id, {int? maxConsecutiveHours}) async {
+  static Future<Subject> updateSubject(
+    int id, {
+    int? maxConsecutiveHours,
+    int? maxHoursPerDay,
+  }) async {
+    final Map<String, dynamic> body = {};
+    if (maxConsecutiveHours != null) {
+      body['max_consecutive_hours'] = maxConsecutiveHours;
+    } else {
+      body['max_consecutive_hours'] = null;
+    }
+    if (maxHoursPerDay != null) {
+      body['max_hours_per_day'] = maxHoursPerDay;
+    } else {
+      body['max_hours_per_day'] = null;
+    }
+
     final response = await BaseClient.put(
       '/subjects/$id',
-      body: {'max_consecutive_hours': maxConsecutiveHours},
+      body: body,
     );
     if (response.statusCode == 200) {
       return Subject.fromJson(jsonDecode(response.body));

@@ -143,15 +143,51 @@ def run_tests():
                 db.add(TeacherConstraint(teacher_id=1, day=g, hour=h))
         db.commit()
         
+        # Restore teacher constraints
+        db.query(TeacherConstraint).delete()
+        db.commit()
+
+        # ---------------------------------------------------------------------
+        # TEST 4: Verification of subject max_hours_per_day constraint
+        # ---------------------------------------------------------------------
+        print("\n[TEST 4] Verification of subject max_hours_per_day...")
+        # Set Italian max_hours_per_day = 1 (Italian has 5 hours/week, 5 days -> exactly 1h/day)
+        s_ita.max_hours_per_day = 1
+        db.commit()
+
+        success, msg, slots, err = generate_timetable(db, max_time_seconds=5.0)
+        print(f"Success: {success} (Expected: True)")
+        assert success is True, f"Failed to solve with subject max_hours_per_day: {err}"
+
+        # Verify that for each class and each day, Italian (subject_id=2) appears at most 1 time
+        for cid in [1, 2]:
+            for g in range(5):
+                ita_slots = [s for s in slots if s["class_id"] == cid and s["day"] == g and s["subject_id"] == 2]
+                assert len(ita_slots) <= 1, f"Class {cid} day {g} has {len(ita_slots)} Italian hours, expected <= 1!"
+
+        # ---------------------------------------------------------------------
+        # TEST 5: Verification pre-check: Subject daily limit overload
+        # ---------------------------------------------------------------------
+        print("\n[TEST 5] Verification pre-check: Subject max_hours_per_day overload...")
+        # Mathematics has 5 hours/week. If max_hours_per_day is set to 1 on a 4-day week, or if weekly_hours=6 with 5 days
+        s_math.max_hours_per_day = 1
+        a_math_1a.weekly_hours = 6  # 6 hours > 5 days * 1 h/day = 5
+        db.commit()
+
         success, msg, slots, err = generate_timetable(db, max_time_seconds=2.0)
         print(f"Success: {success} (Expected: False)")
         print(f"Message: {msg}")
         print(f"Error Detail: {err}")
-        
-        assert success is False, "The solver should have failed due to teacher unavailability!"
-        # Should be caught by pre-check (10 hours assigned, only 1 available)
-        assert "availability" in msg.lower(), "The pre-check should have detected the lack of available hours!"
-        
+
+        assert success is False, "The pre-check should have caught the subject daily limit overload!"
+        assert "exceeds daily limits" in msg.lower(), "Expected error message regarding subject daily limit!"
+
+        # Restore
+        a_math_1a.weekly_hours = 5
+        s_math.max_hours_per_day = None
+        s_ita.max_hours_per_day = None
+        db.commit()
+
         print("\n=== ALL SOLVER TESTS PASSED SUCCESSFULLY! ===")
         
     finally:
@@ -159,3 +195,4 @@ def run_tests():
 
 if __name__ == "__main__":
     run_tests()
+

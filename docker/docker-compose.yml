@@ -2,7 +2,7 @@ services:
     db:
         image: mysql:8.0
         container_name: school_db
-        restart: always
+        restart: "no"
         environment:
             MYSQL_ROOT_PASSWORD: root_password
             MYSQL_DATABASE: school_db
@@ -21,7 +21,7 @@ services:
     redis:
         image: redis:7-alpine
         container_name: school_redis
-        restart: always
+        restart: "no"
         ports:
             - "6379:6379"
 
@@ -30,7 +30,7 @@ services:
             context: ../backend
             dockerfile: Dockerfile
         container_name: school_backend
-        restart: always
+        restart: "no"
         ports:
             - "8000:8000"
         volumes:
@@ -59,7 +59,7 @@ services:
             args:
                 - API_URL
         container_name: school_frontend
-        restart: always
+        restart: "no"
         ports:
             - "8080:80"
         depends_on:

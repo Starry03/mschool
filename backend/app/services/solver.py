@@ -25,7 +25,6 @@ def run_pre_checks(
     teachers: List[Teacher],
     assignments: List[Assignment],
     constraints_map: Dict[int, List[Tuple[int, int]]],
-    subject_constraints: List[ClassSubjectConstraint]
 ) -> None:
     """
     Performs preventative arithmetic checks on data to detect obvious conflicts before starting the solver.
@@ -191,26 +190,33 @@ def build_and_solve_model(
                 for g in giorni_range:
                     model.Add(sum(y[t.id, g, h] for h in ore_range) <= max_day)
 
-    # F. Consecutive hours limit per subject (subject.max_consecutive_hours)
-    # For each subject with a limit set, for each class and day:
-    # the sum of the subject's slots in any window of max+1 hours must be <= max
-    for c in classes:
-        class_assigns = [a for a in assignments if a.class_id == c.id]
-        subj_assigns_map: Dict[int, list] = {}
-        for a in class_assigns:
-            subj_assigns_map.setdefault(a.subject_id, []).append(a)
+    # F. Subject Limits (subject.max_consecutive_hours and subject.max_hours_per_day)
+    if not ignore_subject_limits:
+        for c in classes:
+            class_assigns = [a for a in assignments if a.class_id == c.id]
+            subj_assigns_map: Dict[int, list] = {}
+            for a in class_assigns:
+                subj_assigns_map.setdefault(a.subject_id, []).append(a)
 
-        for subj_id, subj_assign_list in subj_assigns_map.items():
-            max_consec_subj = subjects_map.get(subj_id)
-            if max_consec_subj is not None and max_consec_subj < hours:
-                for g in giorni_range:
-                    for h in range(hours - max_consec_subj):
+            for subj_id, subj_assign_list in subj_assigns_map.items():
+                # 1. Consecutive hours limit
+                max_consec_subj = subjects_map.get(subj_id) if subjects_map else None
+                if max_consec_subj is not None and max_consec_subj < hours:
+                    for g in giorni_range:
+                        for h in range(hours - max_consec_subj):
+                            model.Add(
+                                sum(
+                                    x[a.id, g, h + offset]
+                                    for a in subj_assign_list
+                                    for offset in range(max_consec_subj + 1)
+                                ) <= max_consec_subj
+                            )
+
+                # 2. Daily hours limit
+                max_daily_subj = subjects_daily_map.get(subj_id) if subjects_daily_map else None
+                if max_daily_subj is not None and max_daily_subj < hours:
+                    for g in giorni_range:
                         model.Add(
-                            sum(
-                                x[a.id, g, h + offset]
-                                for a in subj_assign_list
-                                for offset in range(max_consec_subj + 1)
-                            ) <= max_consec_subj
                         )
 
     # -------------------------------------------------------------------------
@@ -381,20 +387,21 @@ def generate_timetable(db: Session, max_time_seconds: float = 10.0) -> Tuple[boo
         if t.settings:
             settings_map[t.id] = t.settings
 
-    # Map the consecutive hour limit per subject (subject_id -> max_consecutive_hours or None)
+    # Map the consecutive and daily hour limits per subject
     subjects = db.query(Subject).all()
-    subjects_map = {s.id: s.max_consecutive_hours for s in subjects}
+    subjects_consec_map = {s.id: s.max_consecutive_hours for s in subjects}
+    subjects_daily_map = {s.id: s.max_hours_per_day for s in subjects}
 
     # 3. Run preventative arithmetic checks
     try:
-        run_pre_checks(days, hours, classes, teachers, assignments, constraints_map, subject_constraints)
+        run_pre_checks(days, hours, classes, teachers, assignments, constraints_map, subject_constraints, subjects)
     except SolverDiagnosticException as ex:
         return False, ex.message, [], ex.details
 
     # 4. Attempt to solve the complete model
     status_name, slots = build_and_solve_model(
         days, hours, classes, teachers, assignments,
-        constraints_map, settings_map, subjects_map,
+        constraints_map, settings_map, subjects_consec_map, subjects_daily_map,
         max_time_seconds=max_time_seconds
     )
     
@@ -406,12 +413,13 @@ def generate_timetable(db: Session, max_time_seconds: float = 10.0) -> Tuple[boo
     # If the solver fails, we disable constraints in blocks to understand the reason.
     # -------------------------------------------------------------------------
     
-    # Diagnosis 1: Disable daily and consecutive hour limits (settings)
+    # Diagnosis 1: Disable daily and consecutive hour limits for teachers (settings)
     status_no_settings, _ = build_and_solve_model(
         days, hours, classes, teachers, assignments,
-        constraints_map, settings_map, subjects_map,
+        constraints_map, settings_map, subjects_consec_map, subjects_daily_map,
         ignore_constraints=False,
         ignore_settings=True,
+        ignore_subject_limits=False,
         max_time_seconds=3.0
     )
     
@@ -423,13 +431,33 @@ def generate_timetable(db: Session, max_time_seconds: float = 10.0) -> Tuple[boo
             "The problem becomes solvable by disabling restrictions on consecutive hours and daily hour limits per teacher. "
             "Suggestion: increase the 'max_consecutive_hours' or 'max_hours_per_day' values of the involved teachers."
         )
+
+    # Diagnosis 1b: Disable subject hour limits (consecutive and daily)
+    status_no_subj_limits, _ = build_and_solve_model(
+        days, hours, classes, teachers, assignments,
+        constraints_map, settings_map, subjects_consec_map, subjects_daily_map,
+        ignore_constraints=False,
+        ignore_settings=False,
+        ignore_subject_limits=True,
+        max_time_seconds=3.0
+    )
+
+    if status_no_subj_limits in ("OPTIMAL", "FEASIBLE"):
+        return (
+            False,
+            "Unable to generate the timetable with the consecutive or daily hour limits set for the subjects.",
+            [],
+            "The problem becomes solvable by disabling restrictions on consecutive or daily hour limits per subject. "
+            "Suggestion: increase the 'max_consecutive_hours' or 'max_hours_per_day' values of the involved subjects."
+        )
         
     # Diagnosis 2: Disable teacher unavailability slots (constraints)
     status_no_constraints, _ = build_and_solve_model(
         days, hours, classes, teachers, assignments,
-        constraints_map, settings_map, subjects_map,
+        constraints_map, settings_map, subjects_consec_map, subjects_daily_map,
         ignore_constraints=True,
         ignore_settings=False,
+        ignore_subject_limits=False,
         max_time_seconds=3.0
     )
     
@@ -443,22 +471,21 @@ def generate_timetable(db: Session, max_time_seconds: float = 10.0) -> Tuple[boo
             "Suggestion: reduce the number of blocked hours in the teachers' calendars."
         )
 
-    # Diagnosis 3: Disable both settings and unavailability
+    # Diagnosis 3: Disable settings, subject limits, and unavailability
     status_clean, _ = build_and_solve_model(
         days, hours, classes, teachers, assignments,
-        constraints_map, settings_map, subjects_map,
+        constraints_map, settings_map, subjects_consec_map, subjects_daily_map,
         ignore_constraints=True,
         ignore_settings=True,
+        ignore_subject_limits=True,
         max_time_seconds=3.0
     )
     
     if status_clean in ("OPTIMAL", "FEASIBLE"):
         return (
             False,
-            "Combined conflict between teacher availability and hour limits.",
+            "Combined conflict between availability and hour limits.",
             [],
-            "The timetable is not solvable due to the combination of hourly unavailability constraints and the consecutive/daily hour preferences of the teachers. "
-            "Suggestion: try relaxing both the unavailability slots and the hour limits of some teachers."
         )
 
     # Structural failure (e.g. oversaturation or unsolvable assignment collisions)

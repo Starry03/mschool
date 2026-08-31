@@ -182,8 +182,10 @@ class _DataManagementViewState extends State<DataManagementView> {
     final fieldBg = DesignSystem.getFieldColor(context);
     final borderColor = isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05);
 
-    int currentMax = subject.maxConsecutiveHours ?? 0; // 0 = no limit
-    int dialogMax = currentMax;
+    int currentMaxConsec = subject.maxConsecutiveHours ?? 0; // 0 = no limit
+    int dialogMaxConsec = currentMaxConsec;
+    int currentMaxDaily = subject.maxHoursPerDay ?? 0; // 0 = no limit
+    int dialogMaxDaily = currentMaxDaily;
 
     await showDialog(
       context: context,
@@ -196,50 +198,93 @@ class _DataManagementViewState extends State<DataManagementView> {
             style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 20),
           ),
           content: SizedBox(
-            width: 360,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: fieldBg,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: borderColor),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        dialogMax == 0
-                            ? 'Max consecutive hours: No limit'
-                            : 'Max consecutive hours: $dialogMax',
-                        style: TextStyle(
-                          color: subtitleColor, fontSize: 14,
-                          fontWeight: FontWeight.w500,
+            width: 380,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Max Consecutive Hours
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: fieldBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dialogMaxConsec == 0
+                              ? 'Max consecutive hours: No limit'
+                              : 'Max consecutive hours: $dialogMaxConsec',
+                          style: TextStyle(
+                            color: subtitleColor, fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      Slider(
-                        value: dialogMax.toDouble(),
-                        min: 0,
-                        max: 6,
-                        divisions: 6,
-                        activeColor: DesignSystem.primary,
-                        inactiveColor: isDark ? Colors.white12 : Colors.black12,
-                        label: dialogMax == 0 ? 'No limit' : '$dialogMax',
-                        onChanged: (val) => setStateDialog(() => dialogMax = val.toInt()),
-                      ),
-                      Text(
-                        dialogMax == 0
-                            ? 'No consecutivity constraint for this subject'
-                            : 'Maximum $dialogMax consecutive ${dialogMax == 1 ? "hour" : "hours"} per class',
-                        style: TextStyle(color: subtitleColor.withOpacity(0.7), fontSize: 12),
-                      ),
-                    ],
+                        Slider(
+                          value: dialogMaxConsec.toDouble(),
+                          min: 0,
+                          max: 6,
+                          divisions: 6,
+                          activeColor: DesignSystem.primary,
+                          inactiveColor: isDark ? Colors.white12 : Colors.black12,
+                          label: dialogMaxConsec == 0 ? 'No limit' : '$dialogMaxConsec',
+                          onChanged: (val) => setStateDialog(() => dialogMaxConsec = val.toInt()),
+                        ),
+                        Text(
+                          dialogMaxConsec == 0
+                              ? 'No consecutivity constraint for this subject'
+                              : 'Maximum $dialogMaxConsec consecutive ${dialogMaxConsec == 1 ? "hour" : "hours"} per class',
+                          style: TextStyle(color: subtitleColor.withOpacity(0.7), fontSize: 12),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  // Max Daily Hours
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: fieldBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dialogMaxDaily == 0
+                              ? 'Max daily hours: No limit'
+                              : 'Max daily hours: $dialogMaxDaily',
+                          style: TextStyle(
+                            color: subtitleColor, fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Slider(
+                          value: dialogMaxDaily.toDouble(),
+                          min: 0,
+                          max: 6,
+                          divisions: 6,
+                          activeColor: DesignSystem.primary,
+                          inactiveColor: isDark ? Colors.white12 : Colors.black12,
+                          label: dialogMaxDaily == 0 ? 'No limit' : '$dialogMaxDaily',
+                          onChanged: (val) => setStateDialog(() => dialogMaxDaily = val.toInt()),
+                        ),
+                        Text(
+                          dialogMaxDaily == 0
+                              ? 'No daily limit for this subject'
+                              : 'Maximum $dialogMaxDaily ${dialogMaxDaily == 1 ? "hour" : "hours"} per day per class',
+                          style: TextStyle(color: subtitleColor.withOpacity(0.7), fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -254,10 +299,11 @@ class _DataManagementViewState extends State<DataManagementView> {
                 try {
                   await ApiService.updateSubject(
                     subject.id,
-                    maxConsecutiveHours: dialogMax == 0 ? null : dialogMax,
+                    maxConsecutiveHours: dialogMaxConsec == 0 ? null : dialogMaxConsec,
+                    maxHoursPerDay: dialogMaxDaily == 0 ? null : dialogMaxDaily,
                   );
                   await _loadSubjects();
-                  _showSuccess('Constraint updated for ${subject.name}!');
+                  _showSuccess('Constraints updated for ${subject.name}!');
                 } catch (e) {
                   _showError('Error: $e');
                 }
@@ -323,7 +369,8 @@ class _DataManagementViewState extends State<DataManagementView> {
       itemsCount: _subjects.length,
       itemBuilder: (context, index) {
         final s = _subjects[index];
-        final hasLimit = s.maxConsecutiveHours != null;
+        final hasConsecLimit = s.maxConsecutiveHours != null;
+        final hasDailyLimit = s.maxHoursPerDay != null;
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return _buildItemRow(
           name: s.name,
@@ -332,9 +379,9 @@ class _DataManagementViewState extends State<DataManagementView> {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (hasLimit)
+              if (hasConsecLimit)
                 Container(
-                  margin: const EdgeInsets.only(right: 8),
+                  margin: const EdgeInsets.only(right: 6),
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: DesignSystem.primary.withOpacity(0.15),
@@ -350,6 +397,24 @@ class _DataManagementViewState extends State<DataManagementView> {
                     ),
                   ),
                 ),
+              if (hasDailyLimit)
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: DesignSystem.secondary.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: DesignSystem.secondary.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    'max ${s.maxHoursPerDay}h/day',
+                    style: const TextStyle(
+                      color: DesignSystem.secondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               IconButton(
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -358,7 +423,7 @@ class _DataManagementViewState extends State<DataManagementView> {
                   color: isDark ? Colors.white38 : Colors.black38,
                   size: 18,
                 ),
-                tooltip: 'Set max consecutive hours',
+                tooltip: 'Configure subject constraints',
                 onPressed: () => _openSubjectSettings(s),
               ),
             ],

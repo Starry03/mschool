@@ -153,14 +153,21 @@ class Subject {
   final int id;
   final String name;
   final int? maxConsecutiveHours;
+  final int? maxHoursPerDay;
 
-  Subject({required this.id, required this.name, this.maxConsecutiveHours});
+  Subject({
+    required this.id,
+    required this.name,
+    this.maxConsecutiveHours,
+    this.maxHoursPerDay,
+  });
 
   factory Subject.fromJson(Map<String, dynamic> json) {
     return Subject(
       id: json['id'],
       name: json['name'],
       maxConsecutiveHours: json['max_consecutive_hours'],
+      maxHoursPerDay: json['max_hours_per_day'],
     );
   }
 

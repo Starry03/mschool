@@ -68,8 +68,16 @@ class ApiService {
   static Future<List<Subject>> getSubjects() => SubjectApi.getSubjects();
   static Future<Subject> createSubject(String name) => SubjectApi.createSubject(name);
   static Future<void> deleteSubject(int id) => SubjectApi.deleteSubject(id);
-  static Future<Subject> updateSubject(int id, {int? maxConsecutiveHours}) =>
-      SubjectApi.updateSubject(id, maxConsecutiveHours: maxConsecutiveHours);
+  static Future<Subject> updateSubject(
+    int id, {
+    int? maxConsecutiveHours,
+    int? maxHoursPerDay,
+  }) =>
+      SubjectApi.updateSubject(
+        id,
+        maxConsecutiveHours: maxConsecutiveHours,
+        maxHoursPerDay: maxHoursPerDay,
+      );
 
   // Assignments
   static Future<List<Assignment>> getAssignments() => AssignmentApi.getAssignments();
