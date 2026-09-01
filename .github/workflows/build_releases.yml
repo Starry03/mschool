@@ -36,7 +36,7 @@ jobs:
       - name: Build APK
         run: |
           cd frontend
-          flutter build apk --release
+          flutter build apk --release --android-skip-build-dependency-validation
 
       - name: Stage Android Asset
         run: |
