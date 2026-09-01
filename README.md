@@ -64,4 +64,4 @@ docker compose -f docker-compose.prod.yml up -d
 
 #### Create admin user
 
-As you are supposed to be the admin and have access to the server, directly access the db and create your account, which can be outside the configured domain.
+First logged in account will be set as admin
