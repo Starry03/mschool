@@ -38,12 +38,15 @@ jobs:
           cd frontend
           flutter build apk --release
 
-      - name: Upload Android Asset
-        uses: softprops/action-gh-release@v2
+      - name: Stage Android Asset
+        run: |
+          cp frontend/build/app/outputs/flutter-apk/app-release.apk mschool-android.apk
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: frontend/build/app/outputs/flutter-apk/app-release.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: android-apk
+          path: mschool-android.apk
 
   build_linux:
     name: Build Linux Desktop
@@ -77,12 +80,11 @@ jobs:
           cd frontend/build/linux/x64/release
           tar -czf $GITHUB_WORKSPACE/mschool-linux.tar.gz bundle/
 
-      - name: Upload Linux Asset
-        uses: softprops/action-gh-release@v2
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: mschool-linux.tar.gz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: linux-app
+          path: mschool-linux.tar.gz
 
   build_windows:
     name: Build Windows Desktop
@@ -109,14 +111,17 @@ jobs:
       - name: Package Windows App
         shell: pwsh
         run: |
-          Compress-Archive -Path frontend/build/windows/x64/runner/Release/* -DestinationPath $env:GITHUB_WORKSPACE/mschool-windows.zip
+          if (Test-Path "frontend/build/windows/x64/runner/Release") {
+            Compress-Archive -Path frontend/build/windows/x64/runner/Release/* -DestinationPath $env:GITHUB_WORKSPACE/mschool-windows.zip
+          } elseif (Test-Path "frontend/build/windows/runner/Release") {
+            Compress-Archive -Path frontend/build/windows/runner/Release/* -DestinationPath $env:GITHUB_WORKSPACE/mschool-windows.zip
+          }
 
-      - name: Upload Windows Asset
-        uses: softprops/action-gh-release@v2
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: mschool-windows.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: windows-app
+          path: mschool-windows.zip
 
   build_macos_ios:
     name: Build macOS & iOS
@@ -152,19 +157,22 @@ jobs:
 
       - name: Package iOS Build
         run: |
-          cd frontend/build/ios/iphoneos
-          mkdir Payload
+          if [ -d "frontend/build/ios/iphoneos" ]; then
+            cd frontend/build/ios/iphoneos
+          elif [ -d "frontend/build/ios/Release-iphoneos" ]; then
+            cd frontend/build/ios/Release-iphoneos
+          fi
+          mkdir -p Payload
           cp -r Runner.app Payload/
           zip -r $GITHUB_WORKSPACE/mschool-ios-nocodesign.ipa Payload
 
-      - name: Upload Apple Assets
-        uses: softprops/action-gh-release@v2
+      - name: Upload Apple Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          files: |
+          name: apple-apps
+          path: |
             mschool-macos.zip
             mschool-ios-nocodesign.ipa
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build_push_docker:
     name: Build and Push Docker Images
@@ -213,4 +221,27 @@ jobs:
             ghcr.io/${{ steps.prep.outputs.owner }}/mschool-all-in-one:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  release:
+    name: Publish GitHub Release
+    needs: [build_android, build_linux, build_windows, build_macos_ios, build_push_docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release_assets
+          merge-multiple: true
+
+      - name: Create Release and Upload Binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release_assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
