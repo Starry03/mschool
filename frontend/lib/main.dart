@@ -175,6 +175,7 @@ class _MainShellState extends State<MainShell> {
   SchoolSettings? _schoolSettings;
   bool _isLoadingSettings = true;
   String _appVersion = 'v1.0.0';
+  String _appVersion = 'v1.0.2';
 
   // Settings controllers
   final _daysController = TextEditingController();
@@ -205,6 +206,7 @@ class _MainShellState extends State<MainShell> {
     } catch (_) {
       setState(() {
         _appVersion = 'v1.0.0';
+        _appVersion = 'v1.0.2';
       });
     }
   }

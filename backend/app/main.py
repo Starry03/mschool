@@ -47,10 +47,11 @@ app = FastAPI(
 # CORS Middleware (indispensable for Flutter frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins in development
+    allow_origins=["*"],
+    allow_origin_regex=r"^https?://.*$",
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include API Router
@@ -64,6 +65,6 @@ else:
     @app.get("/")
     def root():
         return {
-            "message": "Welcome to the School Timetable Generator API!",
+            "message": "Welcome to the mschool API!",
             "documentation": "/docs"
         }

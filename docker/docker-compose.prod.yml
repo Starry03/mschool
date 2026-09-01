@@ -27,6 +27,7 @@ services:
 
     mschool:
         image: ghcr.io/starry03/mschool-all-in-one:latest
+        
         container_name: mschool_app
         restart: always
         ports:

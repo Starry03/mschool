@@ -188,10 +188,12 @@ class _LoginViewState extends State<LoginView> {
     }
 
     // Web / Mobile Flow
-    final mobileOrWebClientId = (defaultTargetPlatform == TargetPlatform.iOS
-            ? (_googleClientIdIos != null && _googleClientIdIos!.isNotEmpty ? _googleClientIdIos : null)
-            : (_googleClientIdAndroid != null && _googleClientIdAndroid!.isNotEmpty ? _googleClientIdAndroid : null)) ??
-        _googleClientId;
+    final mobileOrWebClientId = kIsWeb
+        ? _googleClientId
+        : ((defaultTargetPlatform == TargetPlatform.iOS
+                ? (_googleClientIdIos != null && _googleClientIdIos!.isNotEmpty ? _googleClientIdIos : null)
+                : (_googleClientIdAndroid != null && _googleClientIdAndroid!.isNotEmpty ? _googleClientIdAndroid : null)) ??
+            _googleClientId);
 
     if (mobileOrWebClientId == null || mobileOrWebClientId.isEmpty) {
       _showError("Client ID Google non disponibile.");

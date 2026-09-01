@@ -54,11 +54,23 @@ def google_login(
 
     if id_token_str:
         try:
+            valid_audiences = {
+                cid.strip() for cid in [
+                    settings.WEB_CLIENT_ID,
+                    settings.DESKTOP_CLIENT_ID,
+                    settings.ANDROID_CLIENT_ID,
+                    settings.IOS_CLIENT_ID
+                ] if cid and cid.strip()
+            }
             idinfo = id_token.verify_oauth2_token(
                 id_token_str,
-                google_requests.Request(),
-                settings.WEB_CLIENT_ID
+                google_requests.Request()
             )
+            # Verify that audience matches at least one of our configured Google Client IDs (if configured)
+            token_aud = idinfo.get("aud")
+            if valid_audiences and token_aud not in valid_audiences:
+                raise ValueError(f"Token audience '{token_aud}' does not match any configured Client IDs.")
+
             email = idinfo.get("email")
             first_name = idinfo.get("given_name", "")
             last_name = idinfo.get("family_name", "")
