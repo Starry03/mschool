@@ -7,13 +7,15 @@ import '../widgets/app_button.dart';
 import '../widgets/app_dropdown.dart';
 
 class AssignmentsView extends StatefulWidget {
-  const AssignmentsView({super.key});
+  final SchoolSettings? schoolSettings;
+  const AssignmentsView({super.key, this.schoolSettings});
 
   @override
   State<AssignmentsView> createState() => _AssignmentsViewState();
 }
 
 class _AssignmentsViewState extends State<AssignmentsView> {
+  SchoolSettings? _schoolSettings;
   List<Assignment> _assignments = [];
   List<Teacher> _teachers = [];
   List<SchoolClass> _classes = [];
@@ -30,12 +32,19 @@ class _AssignmentsViewState extends State<AssignmentsView> {
   @override
   void initState() {
     super.initState();
+    _schoolSettings = widget.schoolSettings;
     _loadAllData();
   }
 
   Future<void> _loadAllData() async {
     setState(() => _isLoading = true);
     try {
+      if (_schoolSettings == null) {
+        try {
+          final s = await ApiService.getSettings();
+          if (mounted) setState(() => _schoolSettings = s);
+        } catch (_) {}
+      }
       final teachers = await ApiService.getTeachers();
       final classes = await ApiService.getClasses();
       final subjects = await ApiService.getSubjects();
@@ -425,12 +434,19 @@ class _AssignmentsViewState extends State<AssignmentsView> {
                       final item = listItems[index];
 
                       if (item is String) {
-                        // Render Class Header
+                        // Render Class Header with total hours and soft feedback
+                        final className = item;
+                        final classAssignments = grouped[className] ?? [];
+                        final int totalHours = classAssignments.fold(0, (sum, a) => sum + a.weeklyHours);
+                        final int maxHours = (_schoolSettings?.daysPerWeek ?? 5) * (_schoolSettings?.hoursPerDay ?? 6);
+                        final bool isOverLimit = totalHours > maxHours;
+
                         return Padding(
                           padding: const EdgeInsets.only(
                             top: 16,
                             bottom: 8,
                             left: 8,
+                            right: 8,
                           ),
                           child: Row(
                             children: [
@@ -441,11 +457,56 @@ class _AssignmentsViewState extends State<AssignmentsView> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Class $item',
+                                'Class $className',
                                 style: const TextStyle(
                                   color: DesignSystem.primary,
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isOverLimit
+                                      ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
+                                      : DesignSystem.primary.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: isOverLimit
+                                        ? const Color(0xFFF59E0B).withValues(alpha: 0.5)
+                                        : DesignSystem.primary.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Totale: ${totalHours}h / ${maxHours}h',
+                                      style: TextStyle(
+                                        color: isOverLimit ? const Color(0xFFD97706) : DesignSystem.primary,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    if (isOverLimit) ...[
+                                      const SizedBox(width: 6),
+                                      const Icon(
+                                        Icons.warning_amber_rounded,
+                                        size: 15,
+                                        color: Color(0xFFD97706),
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        '(+${totalHours - maxHours}h oltre il limite)',
+                                        style: const TextStyle(
+                                          color: Color(0xFFD97706),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                             ],

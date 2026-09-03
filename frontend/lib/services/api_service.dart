@@ -54,6 +54,7 @@ class ApiService {
   // Classes
   static Future<List<SchoolClass>> getClasses() => ClassApi.getClasses();
   static Future<SchoolClass> createClass(String name) => ClassApi.createClass(name);
+  static Future<SchoolClass> updateClass(int id, String name) => ClassApi.updateClass(id, name);
   static Future<void> deleteClass(int id) => ClassApi.deleteClass(id);
 
   // Class Subject Constraints
@@ -70,11 +71,13 @@ class ApiService {
   static Future<void> deleteSubject(int id) => SubjectApi.deleteSubject(id);
   static Future<Subject> updateSubject(
     int id, {
+    String? name,
     int? maxConsecutiveHours,
     int? maxHoursPerDay,
   }) =>
       SubjectApi.updateSubject(
         id,
+        name: name,
         maxConsecutiveHours: maxConsecutiveHours,
         maxHoursPerDay: maxHoursPerDay,
       );

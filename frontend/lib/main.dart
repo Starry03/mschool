@@ -583,9 +583,15 @@ class _MainShellState extends State<MainShell> {
           schoolSettings: currentSettings,
         );
       case 2:
-        return const DataManagementView(key: ValueKey('data_mgmt'));
+        return DataManagementView(
+          key: const ValueKey('data_mgmt'),
+          schoolSettings: currentSettings,
+        );
       case 3:
-        return const AssignmentsView(key: ValueKey('assignments'));
+        return AssignmentsView(
+          key: const ValueKey('assignments'),
+          schoolSettings: currentSettings,
+        );
       case 4:
         return _buildSettingsView();
       default:

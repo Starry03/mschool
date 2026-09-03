@@ -34,10 +34,14 @@ class SubjectApi {
 
   static Future<Subject> updateSubject(
     int id, {
+    String? name,
     int? maxConsecutiveHours,
     int? maxHoursPerDay,
   }) async {
     final Map<String, dynamic> body = {};
+    if (name != null && name.trim().isNotEmpty) {
+      body['name'] = name.trim();
+    }
     if (maxConsecutiveHours != null) {
       body['max_consecutive_hours'] = maxConsecutiveHours;
     } else {

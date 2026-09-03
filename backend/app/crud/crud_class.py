@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.models.school_class import SchoolClass
-from app.schemas.school_class import SchoolClassCreate
+from app.schemas.school_class import SchoolClassCreate, SchoolClassUpdate
 
 def get_class(db: Session, class_id: int) -> Optional[SchoolClass]:
     return db.query(SchoolClass).filter(SchoolClass.id == class_id).first()
@@ -18,8 +18,22 @@ def create_class(db: Session, class_in: SchoolClassCreate) -> SchoolClass:
     if len(class_in.name) > 50:
         raise ValueError("Class name cannot exceed 50 characters")
         
-    db_class = SchoolClass(name=class_in.name)
+    db_class = SchoolClass(name=class_in.name.strip())
     db.add(db_class)
+    db.commit()
+    db.refresh(db_class)
+    return db_class
+
+def update_class(db: Session, class_id: int, class_in: SchoolClassUpdate) -> Optional[SchoolClass]:
+    db_class = get_class(db, class_id)
+    if not db_class:
+        return None
+    if not class_in.name or not class_in.name.strip():
+        raise ValueError("Class name cannot be empty")
+    if len(class_in.name) > 50:
+        raise ValueError("Class name cannot exceed 50 characters")
+
+    db_class.name = class_in.name.strip()
     db.commit()
     db.refresh(db_class)
     return db_class

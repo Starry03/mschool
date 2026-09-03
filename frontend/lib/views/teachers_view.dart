@@ -291,9 +291,25 @@ class _TeachersViewState extends State<TeachersView> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(color: subtitleColor, fontSize: 12),
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline, color: DesignSystem.error, size: 20),
-                            onPressed: () => _deleteTeacher(t.id),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  Icons.edit_outlined,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white70
+                                      : Colors.black54,
+                                  size: 20,
+                                ),
+                                tooltip: 'Modifica docente',
+                                onPressed: () => _showEditTeacherDialog(t),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, color: DesignSystem.error, size: 20),
+                                onPressed: () => _deleteTeacher(t.id),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -425,7 +441,12 @@ class _TeachersViewState extends State<TeachersView> {
                 ),
               ],
             ),
-          )
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: DesignSystem.primary, size: 24),
+            tooltip: 'Modifica docente',
+            onPressed: () => _showEditTeacherDialog(teacher),
+          ),
         ],
       ),
     );
@@ -741,6 +762,91 @@ class _TeachersViewState extends State<TeachersView> {
               _addTeacher();
             },
             child: const Text('Save', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditTeacherDialog(Teacher teacher) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? DesignSystem.cardDark : Colors.white;
+    final inputColor = DesignSystem.getTextColor(context);
+    final labelColor = isDark ? Colors.white54 : Colors.black54;
+
+    final editFirstNameController = TextEditingController(text: teacher.firstName);
+    final editLastNameController = TextEditingController(text: teacher.lastName ?? '');
+    final editEmailController = TextEditingController(text: teacher.email ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: dialogBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Modifica Docente',
+          style: TextStyle(color: inputColor, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: editFirstNameController,
+              style: TextStyle(color: inputColor),
+              decoration: InputDecoration(
+                labelText: 'Nome *',
+                labelStyle: TextStyle(color: labelColor),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black26)),
+                focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: DesignSystem.primary)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: editLastNameController,
+              style: TextStyle(color: inputColor),
+              decoration: InputDecoration(
+                labelText: 'Cognome (opzionale)',
+                labelStyle: TextStyle(color: labelColor),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black26)),
+                focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: DesignSystem.primary)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: editEmailController,
+              keyboardType: TextInputType.emailAddress,
+              style: TextStyle(color: inputColor),
+              decoration: InputDecoration(
+                labelText: 'Email (opzionale)',
+                labelStyle: TextStyle(color: labelColor),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black26)),
+                focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: DesignSystem.primary)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annulla', style: TextStyle(color: Colors.grey)),
+          ),
+          AppButton.primary(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            onPressed: () async {
+              final fName = editFirstNameController.text.trim();
+              if (fName.isEmpty) return;
+              final lName = editLastNameController.text.trim().isEmpty ? null : editLastNameController.text.trim();
+              final mail = editEmailController.text.trim().isEmpty ? null : editEmailController.text.trim();
+              Navigator.pop(context);
+              try {
+                await ApiService.updateTeacher(teacher.id, fName, lName, mail);
+                _showSuccess('Docente aggiornato con successo!');
+                await _loadTeachers();
+              } catch (e) {
+                _showError('Errore durante la modifica del docente: $e');
+              }
+            },
+            child: const Text('Salva', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

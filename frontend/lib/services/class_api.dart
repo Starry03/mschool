@@ -32,6 +32,18 @@ class ClassApi {
     }
   }
 
+  static Future<SchoolClass> updateClass(int id, String name) async {
+    final response = await BaseClient.put(
+      '/classes/$id',
+      body: {'name': name},
+    );
+    if (response.statusCode == 200) {
+      return SchoolClass.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception(BaseClient.handleError(response));
+    }
+  }
+
   static Future<List<ClassSubjectConstraint>> getClassSubjectConstraints() async {
     final response = await BaseClient.get('/class-subject-constraints/');
     if (response.statusCode == 200) {

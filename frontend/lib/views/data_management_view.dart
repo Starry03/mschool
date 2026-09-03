@@ -7,13 +7,15 @@ import '../widgets/app_button.dart';
 import '../widgets/app_dropdown.dart';
 
 class DataManagementView extends StatefulWidget {
-  const DataManagementView({super.key});
+  final SchoolSettings? schoolSettings;
+  const DataManagementView({super.key, this.schoolSettings});
 
   @override
   State<DataManagementView> createState() => _DataManagementViewState();
 }
 
 class _DataManagementViewState extends State<DataManagementView> {
+  SchoolSettings? _schoolSettings;
   List<SchoolClass> _classes = [];
   List<Subject> _subjects = [];
   List<ClassSubjectConstraint> _constraints = [];
@@ -32,10 +34,17 @@ class _DataManagementViewState extends State<DataManagementView> {
   @override
   void initState() {
     super.initState();
+    _schoolSettings = widget.schoolSettings;
     _loadAllData();
   }
 
   Future<void> _loadAllData() async {
+    if (_schoolSettings == null) {
+      try {
+        final s = await ApiService.getSettings();
+        if (mounted) setState(() => _schoolSettings = s);
+      } catch (_) {}
+    }
     await _loadClasses();
     await _loadSubjects();
     await _loadConstraints();
@@ -174,6 +183,73 @@ class _DataManagementViewState extends State<DataManagementView> {
     }
   }
 
+  Future<void> _editClass(SchoolClass schoolClass) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = DesignSystem.getTextColor(context);
+    final bgColor = isDark ? DesignSystem.cardDark : Colors.white;
+    final subtitleColor = DesignSystem.getSubtitleColor(context);
+    final fieldBg = DesignSystem.getFieldColor(context);
+    final editController = TextEditingController(text: schoolClass.name);
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: bgColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Modifica Classe',
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 20),
+        ),
+        content: SizedBox(
+          width: 380,
+          child: TextField(
+            controller: editController,
+            style: TextStyle(color: textColor),
+            decoration: InputDecoration(
+              labelText: 'Nome Classe *',
+              labelStyle: TextStyle(color: subtitleColor),
+              filled: true,
+              fillColor: fieldBg,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: DesignSystem.primary, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annulla', style: TextStyle(color: Colors.grey)),
+          ),
+          AppButton.primary(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            onPressed: () async {
+              final newName = editController.text.trim();
+              if (newName.isEmpty) return;
+              Navigator.pop(ctx);
+              try {
+                await ApiService.updateClass(schoolClass.id, newName);
+                _showSuccess('Classe aggiornata con successo!');
+                await _loadClasses();
+                await _loadConstraints();
+              } catch (e) {
+                _showError('Errore durante la modifica della classe: $e');
+              }
+            },
+            child: const Text('Salva', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _openSubjectSettings(Subject subject) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = DesignSystem.getTextColor(context);
@@ -182,6 +258,7 @@ class _DataManagementViewState extends State<DataManagementView> {
     final fieldBg = DesignSystem.getFieldColor(context);
     final borderColor = isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05);
 
+    final nameController = TextEditingController(text: subject.name);
     int currentMaxConsec = subject.maxConsecutiveHours ?? 0; // 0 = no limit
     int dialogMaxConsec = currentMaxConsec;
     int currentMaxDaily = subject.maxHoursPerDay ?? 0; // 0 = no limit
@@ -194,7 +271,7 @@ class _DataManagementViewState extends State<DataManagementView> {
           backgroundColor: bgColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
-            subject.name,
+            'Modifica Materia',
             style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 20),
           ),
           content: SizedBox(
@@ -204,6 +281,27 @@ class _DataManagementViewState extends State<DataManagementView> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  TextField(
+                    controller: nameController,
+                    style: TextStyle(color: textColor),
+                    decoration: InputDecoration(
+                      labelText: 'Nome Materia *',
+                      labelStyle: TextStyle(color: subtitleColor),
+                      filled: true,
+                      fillColor: fieldBg,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: DesignSystem.primary, width: 1.5),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   // Max Consecutive Hours
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -295,15 +393,19 @@ class _DataManagementViewState extends State<DataManagementView> {
             AppButton.primary(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               onPressed: () async {
+                final newName = nameController.text.trim();
+                if (newName.isEmpty) return;
                 Navigator.pop(ctx);
                 try {
                   await ApiService.updateSubject(
                     subject.id,
+                    name: newName,
                     maxConsecutiveHours: dialogMaxConsec == 0 ? null : dialogMaxConsec,
                     maxHoursPerDay: dialogMaxDaily == 0 ? null : dialogMaxDaily,
                   );
                   await _loadSubjects();
-                  _showSuccess('Constraints updated for ${subject.name}!');
+                  await _loadConstraints();
+                  _showSuccess('Materia $newName aggiornata con successo!');
                 } catch (e) {
                   _showError('Error: $e');
                 }
@@ -340,21 +442,22 @@ class _DataManagementViewState extends State<DataManagementView> {
 
   Widget _buildClassesPanel() {
     return _buildPanel(
-      title: 'Classes',
-      subtitle: 'Add and manage school classes (e.g., 1A, 2B)',
-      controller: _classController,
-      labelText: 'Class Name (e.g., 3C)',
-      onAdd: _addClass,
-      isLoading: _isLoadingClasses,
-      itemsCount: _classes.length,
-      itemBuilder: (context, index) {
-        final c = _classes[index];
-        return _buildItemRow(
-          name: c.name,
-          icon: Icons.meeting_room_outlined,
-          onDelete: () => _deleteClass(c.id),
-        );
-      },
+       title: 'Classes',
+       subtitle: 'Add and manage school classes (e.g., 1A, 2B)',
+       controller: _classController,
+       labelText: 'Class Name (e.g., 3C)',
+       onAdd: _addClass,
+       isLoading: _isLoadingClasses,
+       itemsCount: _classes.length,
+       itemBuilder: (context, index) {
+         final c = _classes[index];
+         return _buildItemRow(
+           name: c.name,
+           icon: Icons.meeting_room_outlined,
+           onEdit: () => _editClass(c),
+           onDelete: () => _deleteClass(c.id),
+         );
+       },
     );
   }
 
@@ -371,10 +474,10 @@ class _DataManagementViewState extends State<DataManagementView> {
         final s = _subjects[index];
         final hasConsecLimit = s.maxConsecutiveHours != null;
         final hasDailyLimit = s.maxHoursPerDay != null;
-        final isDark = Theme.of(context).brightness == Brightness.dark;
         return _buildItemRow(
           name: s.name,
           icon: Icons.book_outlined,
+          onEdit: () => _openSubjectSettings(s),
           onDelete: () => _deleteSubject(s.id),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -399,7 +502,7 @@ class _DataManagementViewState extends State<DataManagementView> {
                 ),
               if (hasDailyLimit)
                 Container(
-                  margin: const EdgeInsets.only(right: 8),
+                  margin: const EdgeInsets.only(right: 6),
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: DesignSystem.secondary.withOpacity(0.15),
@@ -415,17 +518,6 @@ class _DataManagementViewState extends State<DataManagementView> {
                     ),
                   ),
                 ),
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: Icon(
-                  Icons.tune,
-                  color: isDark ? Colors.white38 : Colors.black38,
-                  size: 18,
-                ),
-                tooltip: 'Configure subject constraints',
-                onPressed: () => _openSubjectSettings(s),
-              ),
             ],
           ),
         );
@@ -638,19 +730,70 @@ class _DataManagementViewState extends State<DataManagementView> {
                             final item = listItems[index];
 
                             if (item is String) {
-                              // Render Class Header
+                              // Render Class Header with total hours and soft feedback
+                              final className = item;
+                              final classConstraints = grouped[className] ?? [];
+                              final int totalHours = classConstraints.fold(0, (sum, c) => sum + c.weeklyHours);
+                              final int maxHours = (_schoolSettings?.daysPerWeek ?? 5) * (_schoolSettings?.hoursPerDay ?? 6);
+                              final bool isOverLimit = totalHours > maxHours;
+
                               return Padding(
-                                padding: const EdgeInsets.only(top: 16, bottom: 8, left: 8),
+                                padding: const EdgeInsets.only(top: 16, bottom: 8, left: 8, right: 8),
                                 child: Row(
                                   children: [
                                     const Icon(Icons.meeting_room_outlined, size: 16, color: DesignSystem.primary),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'Class $item',
+                                      'Class $className',
                                       style: const TextStyle(
                                         color: DesignSystem.primary,
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isOverLimit
+                                            ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
+                                            : DesignSystem.primary.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: isOverLimit
+                                              ? const Color(0xFFF59E0B).withValues(alpha: 0.5)
+                                              : DesignSystem.primary.withValues(alpha: 0.3),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'Totale: ${totalHours}h / ${maxHours}h',
+                                            style: TextStyle(
+                                              color: isOverLimit ? const Color(0xFFD97706) : DesignSystem.primary,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          if (isOverLimit) ...[
+                                            const SizedBox(width: 6),
+                                            const Icon(
+                                              Icons.warning_amber_rounded,
+                                              size: 15,
+                                              color: Color(0xFFD97706),
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              '(+${totalHours - maxHours}h oltre il limite)',
+                                              style: const TextStyle(
+                                                color: Color(0xFFD97706),
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                     ),
                                   ],
@@ -835,6 +978,7 @@ class _DataManagementViewState extends State<DataManagementView> {
     required String name,
     required IconData icon,
     required VoidCallback onDelete,
+    VoidCallback? onEdit,
     Widget? trailing,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -865,6 +1009,20 @@ class _DataManagementViewState extends State<DataManagementView> {
           if (trailing != null) ...[
             trailing,
             const SizedBox(width: 6),
+          ],
+          if (onEdit != null) ...[
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              icon: Icon(
+                Icons.edit_outlined,
+                color: isDark ? Colors.white70 : Colors.black54,
+                size: 19,
+              ),
+              tooltip: 'Modifica',
+              onPressed: onEdit,
+            ),
+            const SizedBox(width: 8),
           ],
           IconButton(
             padding: EdgeInsets.zero,

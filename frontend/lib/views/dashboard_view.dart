@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
 import '../services/pdf_exporter.dart';
+import '../services/excel_exporter.dart';
 import '../theme/design_system.dart';
 import '../widgets/app_card.dart';
 import '../widgets/app_button.dart';
@@ -717,6 +718,21 @@ class _DashboardViewState extends State<DashboardView> {
               _showError('Unable to export PDF: $e');
             }
             break;
+          case 'export_excel':
+            try {
+              final allSlots = await ApiService.getTimetable();
+              await ExcelExporter.exportTimetable(
+                slots: allSlots,
+                teachers: _teachers,
+                classes: _classes,
+                days: widget.schoolSettings.daysPerWeek,
+                hours: widget.schoolSettings.hoursPerDay,
+              );
+              _showSuccess('Export Excel completato con successo!');
+            } catch (e) {
+              _showError('Impossibile esportare in Excel: $e');
+            }
+            break;
           case 'clear':
             _clearTimetable();
             break;
@@ -751,6 +767,16 @@ class _DashboardViewState extends State<DashboardView> {
                 Icon(Icons.picture_as_pdf_outlined, size: 20, color: DesignSystem.primary),
                 SizedBox(width: 8),
                 Text('Export PDF'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'export_excel',
+            child: Row(
+              children: [
+                Icon(Icons.table_chart_outlined, size: 20, color: DesignSystem.success),
+                SizedBox(width: 8),
+                Text('Export Excel'),
               ],
             ),
           ),
