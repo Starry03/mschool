@@ -251,7 +251,7 @@ class _AssignmentsViewState extends State<AssignmentsView> {
                     children: [
                       Text(
                         'Classes',
-                        style: TextStyle(color: textColor.withOpacity(0.7), fontSize: 13),
+                        style: TextStyle(color: textColor.withValues(alpha: 0.7), fontSize: 13),
                       ),
                       Row(
                         children: [
@@ -355,7 +355,7 @@ class _AssignmentsViewState extends State<AssignmentsView> {
               // 4. Weekly Hours
               Text(
                 'Weekly Hours: $_weeklyHours hours',
-                style: TextStyle(color: textColor.withOpacity(0.7), fontSize: 13),
+                style: TextStyle(color: textColor.withValues(alpha: 0.7), fontSize: 13),
               ),
               Slider(
                 value: _weeklyHours.toDouble(),
@@ -418,7 +418,7 @@ class _AssignmentsViewState extends State<AssignmentsView> {
               ),
             ),
           ),
-          Divider(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06), height: 1),
+          Divider(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06), height: 1),
 
           Expanded(
             child: _assignments.isEmpty
@@ -516,14 +516,14 @@ class _AssignmentsViewState extends State<AssignmentsView> {
 
                       final a = item as Assignment;
                       final rowBgColor = isDark
-                          ? DesignSystem.fieldDark.withOpacity(0.2)
+                          ? DesignSystem.fieldDark.withValues(alpha: 0.2)
                           : const Color(0xFFF1F5F9);
                       final rowBorderColor = isDark
-                          ? Colors.white.withOpacity(0.04)
-                          : Colors.black.withOpacity(0.04);
+                          ? Colors.white.withValues(alpha: 0.04)
+                          : Colors.black.withValues(alpha: 0.04);
                       final badgeBgColor = isDark
-                          ? Colors.white.withOpacity(0.06)
-                          : Colors.black.withOpacity(0.04);
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.04);
 
                       return Container(
                         margin: const EdgeInsets.symmetric(vertical: 4),

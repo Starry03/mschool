@@ -175,8 +175,8 @@ class _DashboardViewState extends State<DashboardView> {
     final textColor = DesignSystem.getTextColor(context);
     final bgColor = isDark ? DesignSystem.cardDark : Colors.white;
     final borderColor = isDark
-        ? Colors.white.withOpacity(0.1)
-        : Colors.black.withOpacity(0.1);
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.1);
     final fieldBg = DesignSystem.getFieldColor(context);
 
     final result = await showDialog<bool>(
@@ -204,7 +204,7 @@ class _DashboardViewState extends State<DashboardView> {
                 decoration: InputDecoration(
                   labelText: 'Name (e.g., Fall Timetable)',
                   labelStyle: TextStyle(
-                    color: textColor.withOpacity(0.5),
+                    color: textColor.withValues(alpha: 0.5),
                     fontSize: 13,
                   ),
                   filled: true,
@@ -238,7 +238,7 @@ class _DashboardViewState extends State<DashboardView> {
                 decoration: InputDecoration(
                   labelText: 'Comment (optional)',
                   labelStyle: TextStyle(
-                    color: textColor.withOpacity(0.5),
+                    color: textColor.withValues(alpha: 0.5),
                     fontSize: 13,
                   ),
                   filled: true,
@@ -316,11 +316,11 @@ class _DashboardViewState extends State<DashboardView> {
     final bgColor = isDark ? DesignSystem.cardDark : Colors.white;
     final subtitleColor = DesignSystem.getSubtitleColor(context);
     final rowBg = isDark
-        ? DesignSystem.fieldDark.withOpacity(0.5)
+        ? DesignSystem.fieldDark.withValues(alpha: 0.5)
         : const Color(0xFFF1F5F9);
     final borderColor = isDark
-        ? Colors.white.withOpacity(0.06)
-        : Colors.black.withOpacity(0.05);
+        ? Colors.white.withValues(alpha: 0.06)
+        : Colors.black.withValues(alpha: 0.05);
 
     List<SavedTimetable> timetables;
     try {
@@ -424,6 +424,7 @@ class _DashboardViewState extends State<DashboardView> {
                                     await ApiService.restoreSavedTimetable(
                                       st.id,
                                     );
+                                    if (!ctx.mounted) return;
                                     Navigator.pop(ctx);
                                     _loadTimetable();
                                     _showSuccess(
@@ -933,9 +934,9 @@ class _DashboardViewState extends State<DashboardView> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: DesignSystem.error.withOpacity(0.12),
+        color: DesignSystem.error.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: DesignSystem.error.withOpacity(0.4)),
+        border: Border.all(color: DesignSystem.error.withValues(alpha: 0.4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

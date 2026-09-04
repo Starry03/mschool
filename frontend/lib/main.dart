@@ -11,6 +11,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'views/assignments_view.dart';
 import 'views/login_view.dart';
 import 'widgets/app_logo.dart';
+import 'core/version.dart';
+import 'services/update_service.dart';
+import 'widgets/update_banner.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -174,7 +177,9 @@ class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
   SchoolSettings? _schoolSettings;
   bool _isLoadingSettings = true;
-  String _appVersion = 'v1.0.0';
+  String _appVersion = AppVersion.formatted;
+  UpdateStatus? _updateStatus;
+  bool _isCheckingUpdates = false;
 
   // Settings controllers
   final _daysController = TextEditingController();
@@ -194,19 +199,50 @@ class _MainShellState extends State<MainShell> {
     super.initState();
     _loadSettings();
     _loadAppVersion();
+    _checkUpdates();
+  }
+
+  Future<void> _checkUpdates({bool force = false, bool showNotification = false}) async {
+    if (_isCheckingUpdates) return;
+    setState(() => _isCheckingUpdates = true);
+    try {
+      final status = await UpdateService.checkForUpdates(force: force);
+      if (mounted) {
+        setState(() {
+          _updateStatus = status;
+        });
+        if (showNotification) {
+          if (status != null && status.hasUpdate) {
+            _showSuccess('Aggiornamento rilevato: v${status.latestReleaseVersion}');
+          } else {
+            _showSuccess('Client e Server sono aggiornati all\'ultima versione (v${AppVersion.current})');
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted && showNotification) {
+        _showError('Impossibile verificare gli aggiornamenti: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCheckingUpdates = false);
+      }
+    }
   }
 
   Future<void> _loadAppVersion() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
-      setState(() {
-        _appVersion = 'v${packageInfo.version}';
-      });
-    } catch (_) {
-      setState(() {
-        _appVersion = 'v1.0.0';
-      });
-    }
+      if (packageInfo.version.isNotEmpty) {
+        setState(() {
+          _appVersion = 'v${packageInfo.version}';
+        });
+        return;
+      }
+    } catch (_) {}
+    setState(() {
+      _appVersion = AppVersion.formatted;
+    });
   }
 
   Future<void> _loadSettings() async {
@@ -560,7 +596,18 @@ class _MainShellState extends State<MainShell> {
               // Main content container with fade transition
               Expanded(
                 child: RepaintBoundary(
-                  child: _buildSelectedView(currentSettings),
+                  child: Column(
+                    children: [
+                      if (_updateStatus != null && _updateStatus!.hasUpdate)
+                        UpdateBanner(
+                          updateStatus: _updateStatus!,
+                          onDismiss: () => setState(() => _updateStatus = null),
+                        ),
+                      Expanded(
+                        child: _buildSelectedView(currentSettings),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -632,12 +679,12 @@ class _MainShellState extends State<MainShell> {
     return Container(
       width: 260,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0B0F19).withOpacity(0.5) : Colors.white,
+        color: isDark ? const Color(0xFF0B0F19).withValues(alpha: 0.5) : Colors.white,
         border: Border(
           right: BorderSide(
             color: isDark
-                ? Colors.white.withOpacity(0.04)
-                : Colors.black.withOpacity(0.06),
+                ? Colors.white.withValues(alpha: 0.04)
+                : Colors.black.withValues(alpha: 0.06),
           ),
         ),
       ),
@@ -724,14 +771,14 @@ class _MainShellState extends State<MainShell> {
                           color: isSelected
                               ? const Color(
                                   0xFF6366F1,
-                                ).withOpacity(isDark ? 0.12 : 0.08)
+                                ).withValues(alpha: isDark ? 0.12 : 0.08)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected
                                 ? const Color(
                                     0xFF6366F1,
-                                  ).withOpacity(isDark ? 0.2 : 0.15)
+                                  ).withValues(alpha: isDark ? 0.2 : 0.15)
                                 : Colors.transparent,
                           ),
                         ),
@@ -838,16 +885,16 @@ class _MainShellState extends State<MainShell> {
 
     // Theme-aware styles
     final cardColor = isDark
-        ? const Color(0xFF1E2235).withOpacity(0.8)
+        ? const Color(0xFF1E2235).withValues(alpha: 0.8)
         : Colors.white;
     final borderColor = isDark
-        ? Colors.white.withOpacity(0.08)
-        : Colors.black.withOpacity(0.06);
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.06);
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
     final subtitleColor = isDark ? Colors.white70 : const Color(0xFF475569);
     final mutedColor = isDark ? Colors.white38 : Colors.black38;
     final fieldBgColor = isDark
-        ? const Color(0xFF2E334D).withOpacity(0.4)
+        ? const Color(0xFF2E334D).withValues(alpha: 0.4)
         : const Color(0xFFF1F5F9);
 
     final Widget globalSettingsCard = Container(
@@ -859,7 +906,7 @@ class _MainShellState extends State<MainShell> {
         boxShadow: !isDark
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -1035,7 +1082,7 @@ class _MainShellState extends State<MainShell> {
         boxShadow: !isDark
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -1071,7 +1118,7 @@ class _MainShellState extends State<MainShell> {
 
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal.withOpacity(isDark ? 0.2 : 0.1),
+              backgroundColor: Colors.teal.withValues(alpha: isDark ? 0.2 : 0.1),
               foregroundColor: isDark
                   ? Colors.tealAccent
                   : Colors.teal.shade700,
@@ -1117,7 +1164,7 @@ class _MainShellState extends State<MainShell> {
         boxShadow: !isDark
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -1352,7 +1399,7 @@ class _MainShellState extends State<MainShell> {
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: fieldBgColor.withOpacity(0.5),
+                      color: fieldBgColor.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: borderColor),
                     ),
@@ -1387,8 +1434,8 @@ class _MainShellState extends State<MainShell> {
                           ),
                           decoration: BoxDecoration(
                             color: user.isAdmin
-                                ? const Color(0xFF8B5CF6).withOpacity(0.15)
-                                : const Color(0xFF10B981).withOpacity(0.15),
+                                ? const Color(0xFF8B5CF6).withValues(alpha: 0.15)
+                                : const Color(0xFF10B981).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -1430,7 +1477,7 @@ class _MainShellState extends State<MainShell> {
         boxShadow: !isDark
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -1473,9 +1520,9 @@ class _MainShellState extends State<MainShell> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.redAccent.withOpacity(0.08),
+              color: Colors.redAccent.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+              border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1503,7 +1550,7 @@ class _MainShellState extends State<MainShell> {
           // Full Clean Database Button
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent.withOpacity(0.15),
+              backgroundColor: Colors.redAccent.withValues(alpha: 0.15),
               foregroundColor: Colors.redAccent,
               side: const BorderSide(color: Colors.redAccent),
               padding: const EdgeInsets.symmetric(vertical: 18),
@@ -1582,6 +1629,118 @@ class _MainShellState extends State<MainShell> {
       ),
     );
 
+    final Widget versionUpdatesCard = Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+        boxShadow: !isDark
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.system_update_alt_rounded,
+                color: Color(0xFF6366F1),
+                size: 26,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Versioni & Aggiornamenti',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Verifica della versione di Client e Server rispetto ai rilasci ufficiali GitHub.',
+            style: TextStyle(color: mutedColor, fontSize: 12),
+          ),
+          const SizedBox(height: 20),
+
+          // Client row
+          _buildVersionRow(
+            icon: Icons.devices_outlined,
+            title: 'Client (Questa App)',
+            currentVersion: _appVersion,
+            latestVersion: _updateStatus?.latestReleaseVersion,
+            needsUpdate: _updateStatus?.clientNeedsUpdate ?? false,
+            textColor: textColor,
+            subtitleColor: subtitleColor,
+            fieldBgColor: fieldBgColor,
+            borderColor: borderColor,
+          ),
+          const SizedBox(height: 12),
+
+          // Server row
+          _buildVersionRow(
+            icon: Icons.dns_outlined,
+            title: 'Server (Backend)',
+            currentVersion: _updateStatus?.currentServerVersion != null
+                ? 'v${_updateStatus!.currentServerVersion}'
+                : (_connectionResult?['version'] != null
+                    ? 'v${_connectionResult!['version']}'
+                    : 'v1.0.13'),
+            latestVersion: _updateStatus?.latestReleaseVersion,
+            needsUpdate: _updateStatus?.serverNeedsUpdate ?? false,
+            textColor: textColor,
+            subtitleColor: subtitleColor,
+            fieldBgColor: fieldBgColor,
+            borderColor: borderColor,
+          ),
+          const SizedBox(height: 20),
+
+          // Action button
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1).withValues(alpha: isDark ? 0.2 : 0.1),
+              foregroundColor: isDark ? const Color(0xFFA5B4FC) : const Color(0xFF4F46E5),
+              side: BorderSide(
+                color: isDark ? const Color(0xFF6366F1) : const Color(0xFF818CF8),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _isCheckingUpdates ? null : () => _checkUpdates(force: true, showNotification: true),
+            icon: _isCheckingUpdates
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.sync_rounded),
+            label: const Text(
+              'Verifica Aggiornamenti',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Padding(
@@ -1590,7 +1749,7 @@ class _MainShellState extends State<MainShell> {
             ? Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left Column: Configuration & Connection Test
+                  // Left Column: Configuration, Connection & Updates
                   Expanded(
                     flex: 5,
                     child: SingleChildScrollView(
@@ -1600,6 +1759,8 @@ class _MainShellState extends State<MainShell> {
                           globalSettingsCard,
                           const SizedBox(height: 24),
                           diagnosticsCard,
+                          const SizedBox(height: 24),
+                          versionUpdatesCard,
                         ],
                       ),
                     ),
@@ -1628,6 +1789,8 @@ class _MainShellState extends State<MainShell> {
                     const SizedBox(height: 24),
                     diagnosticsCard,
                     const SizedBox(height: 24),
+                    versionUpdatesCard,
+                    const SizedBox(height: 24),
                     userManagementCard,
                     const SizedBox(height: 24),
                     databaseMaintenanceCard,
@@ -1650,13 +1813,13 @@ class _MainShellState extends State<MainShell> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: success
-            ? Colors.teal.withOpacity(0.08)
-            : Colors.redAccent.withOpacity(0.08),
+            ? Colors.teal.withValues(alpha: 0.08)
+            : Colors.redAccent.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: success
-              ? Colors.teal.withOpacity(0.3)
-              : Colors.redAccent.withOpacity(0.3),
+              ? Colors.teal.withValues(alpha: 0.3)
+              : Colors.redAccent.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -1723,6 +1886,85 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
+  Widget _buildVersionRow({
+    required IconData icon,
+    required String title,
+    required String currentVersion,
+    required String? latestVersion,
+    required bool needsUpdate,
+    required Color textColor,
+    required Color subtitleColor,
+    required Color fieldBgColor,
+    required Color borderColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: fieldBgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: const Color(0xFF6366F1)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  'Versione installata: $currentVersion',
+                  style: TextStyle(color: subtitleColor, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: needsUpdate
+                  ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
+                  : const Color(0xFF10B981).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: needsUpdate
+                    ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
+                    : const Color(0xFF10B981).withValues(alpha: 0.4),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  needsUpdate ? Icons.warning_amber_rounded : Icons.check_circle_outline,
+                  size: 13,
+                  color: needsUpdate ? const Color(0xFFD97706) : const Color(0xFF059669),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  needsUpdate ? 'Disponibile v$latestVersion' : 'Aggiornato',
+                  style: TextStyle(
+                    color: needsUpdate ? const Color(0xFFD97706) : const Color(0xFF059669),
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTableCleanRow({
     required String title,
     required String tableName,
@@ -1733,11 +1975,11 @@ class _MainShellState extends State<MainShell> {
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
     final mutedColor = isDark ? Colors.white38 : Colors.black38;
     final fieldBgColor = isDark
-        ? const Color(0xFF2E334D).withOpacity(0.2)
+        ? const Color(0xFF2E334D).withValues(alpha: 0.2)
         : const Color(0xFFF1F5F9);
     final borderColor = isDark
-        ? Colors.white.withOpacity(0.04)
-        : Colors.black.withOpacity(0.04);
+        ? Colors.white.withValues(alpha: 0.04)
+        : Colors.black.withValues(alpha: 0.04);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -1772,7 +2014,7 @@ class _MainShellState extends State<MainShell> {
           const SizedBox(width: 12),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orangeAccent.withOpacity(0.15),
+              backgroundColor: Colors.orangeAccent.withValues(alpha: 0.15),
               foregroundColor: Colors.orangeAccent,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

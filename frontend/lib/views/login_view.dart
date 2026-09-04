@@ -305,7 +305,7 @@ class _LoginViewState extends State<LoginView> {
                       shape: BoxShape.circle,
                       color: const Color(
                         0xFF6366F1,
-                      ).withOpacity(isDark ? 0.08 : 0.15),
+                      ).withValues(alpha: isDark ? 0.08 : 0.15),
                     ),
                   ),
                 ),
@@ -319,7 +319,7 @@ class _LoginViewState extends State<LoginView> {
                       shape: BoxShape.circle,
                       color: const Color(
                         0xFF8B5CF6,
-                      ).withOpacity(isDark ? 0.06 : 0.12),
+                      ).withValues(alpha: isDark ? 0.06 : 0.12),
                     ),
                   ),
                 ),
@@ -462,10 +462,10 @@ class _LoginViewState extends State<LoginView> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: DesignSystem.error.withOpacity(0.08),
+                                color: DesignSystem.error.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: DesignSystem.error.withOpacity(0.3),
+                                  color: DesignSystem.error.withValues(alpha: 0.3),
                                 ),
                               ),
                               child: Row(

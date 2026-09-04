@@ -256,7 +256,7 @@ class _DataManagementViewState extends State<DataManagementView> {
     final bgColor = isDark ? DesignSystem.cardDark : Colors.white;
     final subtitleColor = DesignSystem.getSubtitleColor(context);
     final fieldBg = DesignSystem.getFieldColor(context);
-    final borderColor = isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05);
 
     final nameController = TextEditingController(text: subject.name);
     int currentMaxConsec = subject.maxConsecutiveHours ?? 0; // 0 = no limit
@@ -336,7 +336,7 @@ class _DataManagementViewState extends State<DataManagementView> {
                           dialogMaxConsec == 0
                               ? 'No consecutivity constraint for this subject'
                               : 'Maximum $dialogMaxConsec consecutive ${dialogMaxConsec == 1 ? "hour" : "hours"} per class',
-                          style: TextStyle(color: subtitleColor.withOpacity(0.7), fontSize: 12),
+                          style: TextStyle(color: subtitleColor.withValues(alpha: 0.7), fontSize: 12),
                         ),
                       ],
                     ),
@@ -376,7 +376,7 @@ class _DataManagementViewState extends State<DataManagementView> {
                           dialogMaxDaily == 0
                               ? 'No daily limit for this subject'
                               : 'Maximum $dialogMaxDaily ${dialogMaxDaily == 1 ? "hour" : "hours"} per day per class',
-                          style: TextStyle(color: subtitleColor.withOpacity(0.7), fontSize: 12),
+                          style: TextStyle(color: subtitleColor.withValues(alpha: 0.7), fontSize: 12),
                         ),
                       ],
                     ),
@@ -487,9 +487,9 @@ class _DataManagementViewState extends State<DataManagementView> {
                   margin: const EdgeInsets.only(right: 6),
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: DesignSystem.primary.withOpacity(0.15),
+                    color: DesignSystem.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: DesignSystem.primary.withOpacity(0.3)),
+                    border: Border.all(color: DesignSystem.primary.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     'max ${s.maxConsecutiveHours}h consec.',
@@ -505,9 +505,9 @@ class _DataManagementViewState extends State<DataManagementView> {
                   margin: const EdgeInsets.only(right: 6),
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: DesignSystem.secondary.withOpacity(0.15),
+                    color: DesignSystem.secondary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: DesignSystem.secondary.withOpacity(0.3)),
+                    border: Border.all(color: DesignSystem.secondary.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     'max ${s.maxHoursPerDay}h/day',
@@ -580,7 +580,7 @@ class _DataManagementViewState extends State<DataManagementView> {
                   children: [
                     Text(
                       'Class',
-                      style: TextStyle(color: textColor.withOpacity(0.7), fontSize: 12),
+                      style: TextStyle(color: textColor.withValues(alpha: 0.7), fontSize: 12),
                     ),
                     Row(
                       children: [
@@ -710,7 +710,7 @@ class _DataManagementViewState extends State<DataManagementView> {
             ),
 
             const SizedBox(height: 16),
-            Divider(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06), height: 1),
+            Divider(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06), height: 1),
             const SizedBox(height: 12),
 
             // Constraints List
@@ -802,8 +802,8 @@ class _DataManagementViewState extends State<DataManagementView> {
                             }
 
                             final sc = item as ClassSubjectConstraint;
-                            final rowBgColor = isDark ? DesignSystem.fieldDark.withOpacity(0.2) : const Color(0xFFF1F5F9);
-                            final rowBorderColor = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04);
+                            final rowBgColor = isDark ? DesignSystem.fieldDark.withValues(alpha: 0.2) : const Color(0xFFF1F5F9);
+                            final rowBorderColor = isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04);
 
                             return Container(
                               margin: const EdgeInsets.symmetric(vertical: 4),
@@ -824,7 +824,7 @@ class _DataManagementViewState extends State<DataManagementView> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: DesignSystem.primary.withOpacity(0.15),
+                                      color: DesignSystem.primary.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
@@ -930,7 +930,7 @@ class _DataManagementViewState extends State<DataManagementView> {
                     fillColor: fieldBgColor,
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06)),
+                      borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -950,7 +950,7 @@ class _DataManagementViewState extends State<DataManagementView> {
           ),
 
           const SizedBox(height: 24),
-          Divider(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06), height: 1),
+          Divider(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06), height: 1),
           const SizedBox(height: 12),
 
           // List
@@ -982,8 +982,8 @@ class _DataManagementViewState extends State<DataManagementView> {
     Widget? trailing,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final rowBgColor = isDark ? DesignSystem.fieldDark.withOpacity(0.2) : const Color(0xFFF1F5F9);
-    final borderColor = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04);
+    final rowBgColor = isDark ? DesignSystem.fieldDark.withValues(alpha: 0.2) : const Color(0xFFF1F5F9);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04);
     final textColor = DesignSystem.getTextColor(context);
 
     return Container(
@@ -996,7 +996,7 @@ class _DataManagementViewState extends State<DataManagementView> {
       ),
       child: Row(
         children: [
-          Icon(icon, color: DesignSystem.primary.withOpacity(0.8), size: 20),
+          Icon(icon, color: DesignSystem.primary.withValues(alpha: 0.8), size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

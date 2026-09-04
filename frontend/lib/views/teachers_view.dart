@@ -245,7 +245,7 @@ class _TeachersViewState extends State<TeachersView> {
               ],
             ),
           ),
-          Divider(color: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.black.withOpacity(0.06), height: 1),
+          Divider(color: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.black.withValues(alpha: 0.06), height: 1),
 
           Expanded(
             child: _teachers.isEmpty
@@ -263,10 +263,10 @@ class _TeachersViewState extends State<TeachersView> {
                       return Container(
                         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isSelected ? DesignSystem.primary.withOpacity(0.15) : Colors.transparent,
+                          color: isSelected ? DesignSystem.primary.withValues(alpha: 0.15) : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected ? DesignSystem.primary.withOpacity(0.4) : Colors.transparent,
+                            color: isSelected ? DesignSystem.primary.withValues(alpha: 0.4) : Colors.transparent,
                           ),
                         ),
                         child: ListTile(
@@ -323,7 +323,7 @@ class _TeachersViewState extends State<TeachersView> {
 
   Widget _buildNoTeacherSelectedView() {
     final mutedColor = DesignSystem.getMutedColor(context);
-    final textColor = DesignSystem.getTextColor(context).withOpacity(0.38);
+    final textColor = DesignSystem.getTextColor(context).withValues(alpha: 0.38);
 
     return AppCard(
       child: Center(
@@ -627,9 +627,9 @@ class _TeachersViewState extends State<TeachersView> {
                             final key = '$d-$h';
                             final isBusy = _busySlots.contains(key);
                             final cellBgColor = isBusy 
-                                ? DesignSystem.error.withOpacity(0.08) 
+                                ? DesignSystem.error.withValues(alpha: 0.08) 
                                 : Colors.transparent;
-                            final cellBorderColor = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04);
+                            final cellBorderColor = isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04);
                             
                             return TableCell(
                               child: InkWell(
@@ -650,13 +650,13 @@ class _TeachersViewState extends State<TeachersView> {
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
                                       color: isBusy 
-                                          ? DesignSystem.error.withOpacity(0.8) 
+                                          ? DesignSystem.error.withValues(alpha: 0.8) 
                                           : cellBorderColor,
                                       width: isBusy ? 1.5 : 1,
                                     ),
                                     boxShadow: isBusy ? [
                                       BoxShadow(
-                                        color: DesignSystem.error.withOpacity(0.15),
+                                        color: DesignSystem.error.withValues(alpha: 0.15),
                                         blurRadius: 8,
                                       )
                                     ] : null,
