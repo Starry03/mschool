@@ -88,7 +88,7 @@ class _LoginViewState extends State<LoginView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Server raggiungibile$versionStr! Latenza: ${res['ping']} ms. Stato DB: ${res['database']}',
+              'Server reachable$versionStr! Latency: ${res['ping']} ms. DB status: ${res['database']}',
             ),
             backgroundColor: DesignSystem.success,
             behavior: SnackBarBehavior.floating,
@@ -97,7 +97,7 @@ class _LoginViewState extends State<LoginView> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Impossibile connettersi: ${res['error']}'),
+            content: Text('Unable to connect: ${res['error']}'),
             backgroundColor: DesignSystem.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -107,7 +107,7 @@ class _LoginViewState extends State<LoginView> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Errore imprevisto: $e'),
+          content: Text('Unexpected error: $e'),
           backgroundColor: DesignSystem.error,
           behavior: SnackBarBehavior.floating,
         ),
@@ -136,7 +136,7 @@ class _LoginViewState extends State<LoginView> {
           : null;
 
       if (desktopClientId == null || desktopClientId.isEmpty) {
-        _showError("Client ID Google non configurato per Desktop.");
+        _showError("Google Client ID not configured for Desktop.");
         return;
       }
 
@@ -156,26 +156,26 @@ class _LoginViewState extends State<LoginView> {
         if ((idToken == null || idToken.isEmpty) &&
             (accessToken == null || accessToken.isEmpty)) {
           throw Exception(
-            "Impossibile ottenere le credenziali da Google (ID Token o Access Token vuoto).",
+            "Unable to obtain Google credentials (empty ID Token or Access Token).",
           );
         }
 
-        // Invia il token al backend per validazione e creazione sessione
+        // Send token to backend for verification and session creation
         final session = await ApiService.googleLogin(
           idToken: idToken,
           accessToken: accessToken,
         );
 
-        // Notifica il successo al widget principale
+        // Notify main widget of success
         widget.onLoginSuccess(session.user, session.accessToken);
       } catch (e) {
         String errorMsg = e.toString();
         if (errorMsg.contains("client_secret")) {
-          errorMsg += "\n\nSuggerimento: Google richiede il client_secret perché stai usando un Client ID di tipo 'Web'. "
-              "Per Desktop, devi creare un Client ID di tipo 'Applicazione desktop' su Google Cloud Console e impostarlo come DESKTOP_CLIENT_ID nel file backend/.env.";
+          errorMsg += "\n\nTip: Google requires client_secret because you are using a 'Web' Client ID. "
+              "For Desktop, create a Client ID of type 'Desktop application' on Google Cloud Console and set it as DESKTOP_CLIENT_ID in backend/.env.";
         }
         setState(() {
-          _errorMessage = "Login fallito: $errorMsg";
+          _errorMessage = "Login failed: $errorMsg";
         });
       } finally {
         if (mounted) {
@@ -196,7 +196,7 @@ class _LoginViewState extends State<LoginView> {
             _googleClientId);
 
     if (mobileOrWebClientId == null || mobileOrWebClientId.isEmpty) {
-      _showError("Client ID Google non disponibile.");
+      _showError("Google Client ID not available.");
       return;
     }
 
@@ -211,10 +211,10 @@ class _LoginViewState extends State<LoginView> {
         scopes: ['email', 'profile'],
       );
 
-      // Avvia il login con Google
+      // Start Google login
       final GoogleSignInAccount? account = await googleSignIn.signIn();
       if (account == null) {
-        // L'utente ha annullato il login
+        // User cancelled login
         setState(() => _isLoading = false);
         return;
       }
@@ -226,21 +226,21 @@ class _LoginViewState extends State<LoginView> {
       if ((idToken == null || idToken.isEmpty) &&
           (accessToken == null || accessToken.isEmpty)) {
         throw Exception(
-          "Impossibile ottenere le credenziali da Google (ID Token o Access Token vuoto).",
+          "Unable to obtain Google credentials (empty ID Token or Access Token).",
         );
       }
 
-      // Invia il token al backend per validazione e creazione sessione
+      // Send token to backend for verification and session creation
       final session = await ApiService.googleLogin(
         idToken: idToken,
         accessToken: accessToken,
       );
 
-      // Notifica il successo al widget principale
+      // Notify main widget of success
       widget.onLoginSuccess(session.user, session.accessToken);
     } catch (e) {
       setState(() {
-        _errorMessage = "Login fallito: $e";
+        _errorMessage = "Login failed: $e";
       });
     } finally {
       if (mounted) {

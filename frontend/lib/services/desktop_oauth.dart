@@ -26,7 +26,7 @@ class DesktopOAuth {
       if (await canLaunchUrl(authUrl)) {
         await launchUrl(authUrl, mode: LaunchMode.externalApplication);
       } else {
-        throw Exception('Impossibile aprire il browser per il login.');
+        throw Exception('Unable to open browser for login.');
       }
 
       // 4. Wait for the redirect request from the browser
@@ -40,9 +40,9 @@ class DesktopOAuth {
         request.response
           ..statusCode = HttpStatus.badRequest
           ..headers.contentType = ContentType.html
-          ..write('<h1>Errore di autenticazione: $error</h1>');
+          ..write('<h1>Authentication error: $error</h1>');
         await request.response.close();
-        throw Exception('Errore di autenticazione da Google: $error');
+        throw Exception('Google authentication error: $error');
       }
 
       if (code == null) {
@@ -114,7 +114,7 @@ class DesktopOAuth {
         final Map<String, dynamic> tokenData = jsonDecode(tokenResponse.body);
         return tokenData;
       } else {
-        throw Exception('Scambio del codice fallito: ${tokenResponse.body}');
+        throw Exception('Code exchange failed: ${tokenResponse.body}');
       }
     } finally {
       await server.close();

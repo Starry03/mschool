@@ -259,7 +259,7 @@ class _MainShellState extends State<MainShell> {
         _loadUsers();
       }
     } catch (e) {
-      _showError('Errore nel caricamento delle impostazioni: $e');
+      _showError('Error loading settings: $e');
     } finally {
       setState(() => _isLoadingSettings = false);
     }
@@ -271,7 +271,7 @@ class _MainShellState extends State<MainShell> {
     final allowedDomain = _allowedDomainController.text.trim();
 
     if (days < 1 || days > 6 || hours < 1 || hours > 8) {
-      _showError('Impostazioni non valide: max 6 giorni e max 8 ore.');
+      _showError('Invalid settings: max 6 days and max 8 hours.');
       return;
     }
 
@@ -285,9 +285,9 @@ class _MainShellState extends State<MainShell> {
       setState(() {
         _schoolSettings = settings;
       });
-      _showSuccess('Impostazioni salvate con successo!');
+      _showSuccess('Settings saved successfully!');
     } catch (e) {
-      _showError('Impossibile salvare le impostazioni: $e');
+      _showError('Unable to save settings: $e');
     } finally {
       setState(() => _isLoadingSettings = false);
     }
@@ -302,7 +302,7 @@ class _MainShellState extends State<MainShell> {
         _usersList = list;
       });
     } catch (e) {
-      _showError('Impossibile caricare la lista utenti: $e');
+      _showError('Unable to load users list: $e');
     } finally {
       setState(() => _isLoadingUsers = false);
     }
@@ -315,7 +315,7 @@ class _MainShellState extends State<MainShell> {
     final role = _userSelectedRole;
 
     if (fName.isEmpty || lName.isEmpty || email.isEmpty) {
-      _showError('Tutti i campi dell\'utente sono obbligatori.');
+      _showError('All user fields are required.');
       return;
     }
 
@@ -325,10 +325,10 @@ class _MainShellState extends State<MainShell> {
       _userFirstNameController.clear();
       _userLastNameController.clear();
       _userEmailController.clear();
-      _showSuccess('Utente creato con successo!');
+      _showSuccess('User created successfully!');
       _loadUsers();
     } catch (e) {
-      _showError('Errore nella creazione dell\'utente: $e');
+      _showError('Error creating user: $e');
     } finally {
       setState(() => _isLoadingUsers = false);
     }
@@ -340,26 +340,26 @@ class _MainShellState extends State<MainShell> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E2235),
         title: const Text(
-          'Rimuovi Utente',
+          'Remove User',
           style: TextStyle(
             color: Colors.redAccent,
             fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
-          'Sei sicuro di voler rimuovere l\'utente ${user.firstName} ${user.lastName} (${user.email})?\n\nQuesta azione revocherà immediatamente il suo accesso.',
+          'Are you sure you want to remove user ${user.firstName} ${user.lastName} (${user.email})?\n\nThis will immediately revoke their access.',
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annulla', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
-              'Rimuovi',
+              'Remove',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -374,10 +374,10 @@ class _MainShellState extends State<MainShell> {
       setState(() => _isLoadingUsers = true);
       try {
         await ApiService.deleteUser(user.id);
-        _showSuccess('Utente rimosso con successo!');
+        _showSuccess('User removed successfully!');
         _loadUsers();
       } catch (e) {
-        _showError('Errore nella rimozione dell\'utente: $e');
+        _showError('Error removing user: $e');
       } finally {
         setState(() => _isLoadingUsers = false);
       }
@@ -1017,9 +1017,9 @@ class _MainShellState extends State<MainShell> {
           ),
           const SizedBox(height: 16),
 
-          // Dominio Email Abilitato
+          // Allowed Email Domain
           Text(
-            'Dominio Email Consentito (es. school.it)',
+            'Allowed Email Domain (e.g., school.it)',
             style: TextStyle(
               color: subtitleColor,
               fontSize: 13,
@@ -1031,7 +1031,7 @@ class _MainShellState extends State<MainShell> {
             controller: _allowedDomainController,
             style: TextStyle(color: textColor),
             decoration: InputDecoration(
-              hintText: 'Nessuno (solo utenti registrati)',
+              hintText: 'None (registered users only)',
               hintStyle: TextStyle(color: mutedColor),
               filled: true,
               fillColor: fieldBgColor,
@@ -1065,7 +1065,7 @@ class _MainShellState extends State<MainShell> {
             ),
             onPressed: _saveSettings,
             child: const Text(
-              'Salva Impostazioni',
+              'Save Settings',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),

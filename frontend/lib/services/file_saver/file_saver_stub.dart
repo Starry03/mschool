@@ -6,6 +6,6 @@ Future<void> saveFileImpl({
   required String dialogTitle,
   String? mimeType,
 }) async {
-  throw UnsupportedError('Piattaforma non supportata per il salvataggio file.');
+  throw UnsupportedError('Platform not supported for file saving.');
 }
 

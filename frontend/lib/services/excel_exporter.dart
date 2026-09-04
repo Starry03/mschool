@@ -36,7 +36,7 @@ class ExcelExporter {
     await FileSaver.saveFile(
       bytes: bytes,
       fileName: 'orario_scolastico.xlsx',
-      dialogTitle: 'Salva Orario Excel',
+      dialogTitle: 'Save Timetable Excel',
       mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     );
   }
@@ -83,7 +83,7 @@ class ExcelExporter {
 
     final List<int>? encoded = excel.encode();
     if (encoded == null) {
-      throw Exception('Impossibile codificare il file Excel.');
+      throw Exception('Unable to encode Excel file.');
     }
     return _injectPageSetup(Uint8List.fromList(encoded));
   }

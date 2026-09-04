@@ -197,7 +197,7 @@ class _DataManagementViewState extends State<DataManagementView> {
         backgroundColor: bgColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Modifica Classe',
+          'Edit Class',
           style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         content: SizedBox(
@@ -206,7 +206,7 @@ class _DataManagementViewState extends State<DataManagementView> {
             controller: editController,
             style: TextStyle(color: textColor),
             decoration: InputDecoration(
-              labelText: 'Nome Classe *',
+              labelText: 'Class Name *',
               labelStyle: TextStyle(color: subtitleColor),
               filled: true,
               fillColor: fieldBg,
@@ -226,7 +226,7 @@ class _DataManagementViewState extends State<DataManagementView> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annulla', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           AppButton.primary(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -236,14 +236,14 @@ class _DataManagementViewState extends State<DataManagementView> {
               Navigator.pop(ctx);
               try {
                 await ApiService.updateClass(schoolClass.id, newName);
-                _showSuccess('Classe aggiornata con successo!');
+                _showSuccess('Class updated successfully!');
                 await _loadClasses();
                 await _loadConstraints();
               } catch (e) {
-                _showError('Errore durante la modifica della classe: $e');
+                _showError('Error updating class: $e');
               }
             },
-            child: const Text('Salva', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -271,7 +271,7 @@ class _DataManagementViewState extends State<DataManagementView> {
           backgroundColor: bgColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
-            'Modifica Materia',
+            'Edit Subject',
             style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 20),
           ),
           content: SizedBox(
@@ -285,7 +285,7 @@ class _DataManagementViewState extends State<DataManagementView> {
                     controller: nameController,
                     style: TextStyle(color: textColor),
                     decoration: InputDecoration(
-                      labelText: 'Nome Materia *',
+                      labelText: 'Subject Name *',
                       labelStyle: TextStyle(color: subtitleColor),
                       filled: true,
                       fillColor: fieldBg,
@@ -405,7 +405,7 @@ class _DataManagementViewState extends State<DataManagementView> {
                   );
                   await _loadSubjects();
                   await _loadConstraints();
-                  _showSuccess('Materia $newName aggiornata con successo!');
+                  _showSuccess('Subject $newName updated successfully!');
                 } catch (e) {
                   _showError('Error: $e');
                 }
@@ -1019,7 +1019,7 @@ class _DataManagementViewState extends State<DataManagementView> {
                 color: isDark ? Colors.white70 : Colors.black54,
                 size: 19,
               ),
-              tooltip: 'Modifica',
+              tooltip: 'Edit',
               onPressed: onEdit,
             ),
             const SizedBox(width: 8),

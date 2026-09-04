@@ -181,7 +181,7 @@ class _DashboardViewState extends State<DashboardView> {
         backgroundColor: bgColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Esporta Orario Excel',
+          'Export Excel Timetable',
           style: TextStyle(
             color: textColor,
             fontWeight: FontWeight.bold,
@@ -195,7 +195,7 @@ class _DashboardViewState extends State<DashboardView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Personalizza l\'intestazione dell\'orario (modello Aranova):',
+                'Customize timetable header (Aranova model):',
                 style: TextStyle(
                   color: textColor.withValues(alpha: 0.7),
                   fontSize: 13,
@@ -206,7 +206,7 @@ class _DashboardViewState extends State<DashboardView> {
                 controller: titleController,
                 style: TextStyle(color: textColor),
                 decoration: InputDecoration(
-                  labelText: 'Titolo Documento',
+                  labelText: 'Document Title',
                   labelStyle: TextStyle(
                     color: textColor.withValues(alpha: 0.5),
                     fontSize: 13,
@@ -234,7 +234,7 @@ class _DashboardViewState extends State<DashboardView> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(
-              'Annulla',
+              'Cancel',
               style: TextStyle(color: textColor.withValues(alpha: 0.6)),
             ),
           ),
@@ -245,7 +245,7 @@ class _DashboardViewState extends State<DashboardView> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Esporta Excel'),
+            child: const Text('Export Excel'),
           ),
         ],
       ),
@@ -265,9 +265,9 @@ class _DashboardViewState extends State<DashboardView> {
             ? titleController.text.trim()
             : 'ORARIO DEFINITIVO ARANOVA a.s. 2025/2026',
       );
-      _showSuccess('Export Excel completato con successo!');
+      _showSuccess('Excel exported successfully!');
     } catch (e) {
-      _showError('Impossibile esportare in Excel: $e');
+      _showError('Unable to export Excel: $e');
     }
   }
 
