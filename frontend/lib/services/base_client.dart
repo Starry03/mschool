@@ -3,10 +3,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
 class BaseClient {
-  static String baseUrl = const String.fromEnvironment(
-    'API_URL',
-    defaultValue: 'http://localhost:8000/api/v1',
-  );
   static String baseUrl = _initBaseUrl();
 
   static String _initBaseUrl() {
