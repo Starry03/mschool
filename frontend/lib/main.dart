@@ -1699,7 +1699,7 @@ class _MainShellState extends State<MainShell> {
                 ? 'v${_updateStatus!.currentServerVersion}'
                 : (_connectionResult?['version'] != null
                     ? 'v${_connectionResult!['version']}'
-                    : 'v1.0.13'),
+                    : 'v${AppVersion.current}'),
             latestVersion: _updateStatus?.latestReleaseVersion,
             needsUpdate: _updateStatus?.serverNeedsUpdate ?? false,
             textColor: textColor,
