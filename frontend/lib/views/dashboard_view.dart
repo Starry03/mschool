@@ -163,6 +163,114 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
+  Future<void> _exportExcel() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleController = TextEditingController(
+      text: 'ORARIO DEFINITIVO ARANOVA a.s. 2025/2026',
+    );
+    final textColor = DesignSystem.getTextColor(context);
+    final bgColor = isDark ? DesignSystem.cardDark : Colors.white;
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.1);
+    final fieldBg = DesignSystem.getFieldColor(context);
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: bgColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Esporta Orario Excel',
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        content: SizedBox(
+          width: 440,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Personalizza l\'intestazione dell\'orario (modello Aranova):',
+                style: TextStyle(
+                  color: textColor.withValues(alpha: 0.7),
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: titleController,
+                style: TextStyle(color: textColor),
+                decoration: InputDecoration(
+                  labelText: 'Titolo Documento',
+                  labelStyle: TextStyle(
+                    color: textColor.withValues(alpha: 0.5),
+                    fontSize: 13,
+                  ),
+                  filled: true,
+                  fillColor: fieldBg,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderSide: BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Annulla',
+              style: TextStyle(color: textColor.withValues(alpha: 0.6)),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Esporta Excel'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final allSlots = await ApiService.getTimetable();
+      await ExcelExporter.exportTimetable(
+        slots: allSlots,
+        teachers: _teachers,
+        classes: _classes,
+        days: widget.schoolSettings.daysPerWeek,
+        hours: widget.schoolSettings.hoursPerDay,
+        title: titleController.text.trim().isNotEmpty
+            ? titleController.text.trim()
+            : 'ORARIO DEFINITIVO ARANOVA a.s. 2025/2026',
+      );
+      _showSuccess('Export Excel completato con successo!');
+    } catch (e) {
+      _showError('Impossibile esportare in Excel: $e');
+    }
+  }
+
   Future<void> _saveTimetable() async {
     if (_slots.isEmpty) {
       _showError('No timetable to save. Please generate a timetable first.');
@@ -720,19 +828,7 @@ class _DashboardViewState extends State<DashboardView> {
             }
             break;
           case 'export_excel':
-            try {
-              final allSlots = await ApiService.getTimetable();
-              await ExcelExporter.exportTimetable(
-                slots: allSlots,
-                teachers: _teachers,
-                classes: _classes,
-                days: widget.schoolSettings.daysPerWeek,
-                hours: widget.schoolSettings.hoursPerDay,
-              );
-              _showSuccess('Export Excel completato con successo!');
-            } catch (e) {
-              _showError('Impossibile esportare in Excel: $e');
-            }
+            _exportExcel();
             break;
           case 'clear':
             _clearTimetable();
