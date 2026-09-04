@@ -213,15 +213,15 @@ class _MainShellState extends State<MainShell> {
         });
         if (showNotification) {
           if (status != null && status.hasUpdate) {
-            _showSuccess('Aggiornamento rilevato: v${status.latestReleaseVersion}');
+            _showSuccess('Update detected: v${status.latestReleaseVersion}');
           } else {
-            _showSuccess('Client e Server sono aggiornati all\'ultima versione (v${AppVersion.current})');
+            _showSuccess('Client and Server are up to date (v${AppVersion.current})');
           }
         }
       }
     } catch (e) {
       if (mounted && showNotification) {
-        _showError('Impossibile verificare gli aggiornamenti: $e');
+        _showError('Unable to check for updates: $e');
       }
     } finally {
       if (mounted) {
@@ -1658,7 +1658,7 @@ class _MainShellState extends State<MainShell> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Versioni & Aggiornamenti',
+                  'Versions & Updates',
                   style: TextStyle(
                     color: textColor,
                     fontSize: 20,
@@ -1672,7 +1672,7 @@ class _MainShellState extends State<MainShell> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Verifica della versione di Client e Server rispetto ai rilasci ufficiali GitHub.',
+            'Check Client and Server versions against official GitHub releases.',
             style: TextStyle(color: mutedColor, fontSize: 12),
           ),
           const SizedBox(height: 20),
@@ -1680,7 +1680,7 @@ class _MainShellState extends State<MainShell> {
           // Client row
           _buildVersionRow(
             icon: Icons.devices_outlined,
-            title: 'Client (Questa App)',
+            title: 'Client (This App)',
             currentVersion: _appVersion,
             latestVersion: _updateStatus?.latestReleaseVersion,
             needsUpdate: _updateStatus?.clientNeedsUpdate ?? false,
@@ -1733,7 +1733,7 @@ class _MainShellState extends State<MainShell> {
                   )
                 : const Icon(Icons.sync_rounded),
             label: const Text(
-              'Verifica Aggiornamenti',
+              'Check for Updates',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -1950,7 +1950,7 @@ class _MainShellState extends State<MainShell> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  needsUpdate ? 'Disponibile v$latestVersion' : 'Aggiornato',
+                  needsUpdate ? 'Available v$latestVersion' : 'Up to date',
                   style: TextStyle(
                     color: needsUpdate ? const Color(0xFFD97706) : const Color(0xFF059669),
                     fontSize: 11,

@@ -40,17 +40,17 @@ class _UpdateBannerState extends State<UpdateBanner> {
     String title;
     String subtitle;
     if (status.bothNeedUpdate) {
-      title = 'Aggiornamento disponibile (v${status.latestReleaseVersion})';
+      title = 'Update available (v${status.latestReleaseVersion})';
       subtitle =
-          'Sia il client (v${status.currentClientVersion}) che il server (v${status.currentServerVersion ?? "?"}) possono essere aggiornati.';
+          'Both the client (v${status.currentClientVersion}) and server (v${status.currentServerVersion ?? "?"}) can be updated.';
     } else if (status.clientNeedsUpdate) {
-      title = 'Nuova versione Client disponibile (v${status.latestReleaseVersion})';
+      title = 'New Client version available (v${status.latestReleaseVersion})';
       subtitle =
-          'La tua versione attuale è v${status.currentClientVersion}. Scarica l\'aggiornamento.';
+          'Your current version is v${status.currentClientVersion}. Download the update.';
     } else {
-      title = 'Nuova versione Server disponibile (v${status.latestReleaseVersion})';
+      title = 'New Server version available (v${status.latestReleaseVersion})';
       subtitle =
-          'Il backend attuale è fermo alla v${status.currentServerVersion ?? "?"}. Aggiorna i container.';
+          'The current backend is on v${status.currentServerVersion ?? "?"}. Update the containers.';
     }
 
     return Container(
@@ -128,7 +128,7 @@ class _UpdateBannerState extends State<UpdateBanner> {
             onPressed: _openReleaseUrl,
             icon: const Icon(Icons.open_in_new, size: 14),
             label: const Text(
-              'Dettagli',
+              'Details',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
@@ -139,7 +139,7 @@ class _UpdateBannerState extends State<UpdateBanner> {
               size: 18,
               color: isDark ? Colors.white54 : Colors.black54,
             ),
-            tooltip: 'Chiudi notifica',
+            tooltip: 'Dismiss notification',
             onPressed: () {
               setState(() => _isDismissed = true);
               widget.onDismiss?.call();
