@@ -65,6 +65,6 @@ else:
     @app.get("/")
     def root():
         return {
-            "message": "Welcome to the mschool API!",
+            "message": "Welcome to the MSchool API!",
             "documentation": "/docs"
         }

@@ -1,5 +1,6 @@
-package com.school.timetable.mschool
+package com.mschool
 
 import io.flutter.embedding.android.FlutterActivity
 
 class MainActivity : FlutterActivity()
+

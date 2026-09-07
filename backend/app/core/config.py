@@ -3,7 +3,7 @@ import app.patch_pydantic
 from pydantic import BaseSettings, Field
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "School Timetable Generator"
+    PROJECT_NAME: str = "MSchool"
     API_V1_STR: str = "/api/v1"
     
     # Database Settings

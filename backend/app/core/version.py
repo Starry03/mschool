@@ -4,6 +4,6 @@ Follows Semantic Versioning (https://semver.org/).
 """
 
 __version__ = "1.1.4"
-__app_name__ = "MSchool Timetable API"
+__app_name__ = "MSchool API"
 __api_version__ = "v1"
 
