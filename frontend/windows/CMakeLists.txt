@@ -6,6 +6,13 @@ project(mschool LANGUAGES CXX)
 # the on-disk name of your application.
 set(BINARY_NAME "mschool")
 
+# Ensure target platform and pdfium architecture are properly defined for plugins (e.g. printing)
+if(NOT DEFINED FLUTTER_TARGET_PLATFORM)
+  set(FLUTTER_TARGET_PLATFORM "windows-x64" CACHE STRING "Flutter target platform")
+endif()
+set(PDFIUM_ARCH "x64" CACHE STRING "Architecture of pdfium used")
+set(PDFIUM_VERSION "5200" CACHE STRING "Version of pdfium used")
+
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)

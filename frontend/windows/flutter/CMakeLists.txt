@@ -12,6 +12,7 @@ set(WRAPPER_ROOT "${EPHEMERAL_DIR}/cpp_client_wrapper")
 
 # Set fallback configurations for older versions of the flutter tool.
 if (NOT DEFINED FLUTTER_TARGET_PLATFORM)
+  set(FLUTTER_TARGET_PLATFORM "windows-x64" PARENT_SCOPE)
   set(FLUTTER_TARGET_PLATFORM "windows-x64")
 endif()
 
